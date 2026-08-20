@@ -1,1 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BI Command Centre</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
 
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">
+        <span class="brand-icon">▪</span>
+        <span class="brand-icon dim">▪</span>
+        <span class="brand-icon dimmer">▪</span>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">BI Command</span>
+        <span class="brand-sub">Centre</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-label">Analytics</span>
+      <a href="#overview" class="nav-item active" data-section="overview">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        Overview
+      </a>
+      <a href="#sales" class="nav-item" data-section="sales">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polyline points="1,11 5,7 8,9 12,4 15,6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Sales Trend
+      </a>
+      <a href="#products" class="nav-item" data-section="products">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="14" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M5 5V4a3 3 0 016 0v1" stroke="currentColor" stroke-width="1.5"/></svg>
+        Products
+      </a>
+      <a href="#categories" class="nav-item" data-section="categories">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v7l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Categories
+      </a>
+      <a href="#regions" class="nav-item" data-section="regions">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 10c-4 0-7 1.5-7 3.5h14C15 11.5 12 10 8 10z" stroke="currentColor" stroke-width="1.5"/></svg>
+        Regions
+      </a>
+
+      <span class="nav-label" style="margin-top:1.5rem;">Intelligence</span>
+      <a href="#insights" class="nav-item" data-section="insights">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M6 10.5l.5 3.5h3l.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Insights
+      </a>
+      <a href="#forecast" class="nav-item" data-section="forecast">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 13L5 8l3 3 3-5 4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 1"/></svg>
+        Forecast
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="data-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">Connecting…</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main-wrap">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-title" id="topbarTitle">Executive Overview</div>
+
+      <div class="topbar-filters">
+        <!-- Year -->
+        <div class="filter-group">
+          <label class="filter-label">Year</label>
+          <select class="filter-select" id="filterYear">
+            <option value="">All</option>
+          </select>
+        </div>
+        <!-- Region -->
+        <div class="filter-group">
+          <label class="filter-label">Region</label>
+          <select class="filter-select" id="filterRegion">
+            <option value="">All</option>
+          </select>
+        </div>
+        <!-- Category -->
+        <div class="filter-group">
+          <label class="filter-label">Category</label>
+          <select class="filter-select" id="filterCategory">
+            <option value="">All</option>
+          </select>
+        </div>
+
+        <button class="btn-apply" id="btnApply">Apply</button>
+        <button class="btn-reset" id="btnReset">Reset</button>
+      </div>
+    </header>
+
+    <!-- Sections -->
+    <main class="content">
+
+      <!-- ── OVERVIEW ─────────────────────────────────── -->
+      <section class="section active" id="section-overview">
+        <div class="section-header">
+          <h2 class="section-title">Executive Overview</h2>
+          <span class="section-sub">Key performance indicators across all operations</span>
+        </div>
+
+        <div class="kpi-grid" id="kpiGrid">
+          <div class="kpi-card skeleton" id="kpi-revenue">
+            <div class="kpi-label">Total Revenue</div>
+            <div class="kpi-value" id="kpiRevenue">—</div>
+            <div class="kpi-meta" id="kpiRevenueGrowth"></div>
+          </div>
+          <div class="kpi-card skeleton" id="kpi-profit">
+            <div class="kpi-label">Total Profit</div>
+            <div class="kpi-value" id="kpiProfit">—</div>
+            <div class="kpi-meta" id="kpiMargin"></div>
+          </div>
+          <div class="kpi-card skeleton" id="kpi-orders">
+            <div class="kpi-label">Total Orders</div>
+            <div class="kpi-value" id="kpiOrders">—</div>
+            <div class="kpi-meta" id="kpiAvgOrder"></div>
+          </div>
+          <div class="kpi-card skeleton" id="kpi-qty">
+            <div class="kpi-label">Units Sold</div>
+            <div class="kpi-value" id="kpiQty">—</div>
+            <div class="kpi-meta"></div>
+          </div>
+          <div class="kpi-card skeleton" id="kpi-aov">
+            <div class="kpi-label">Avg Order Value</div>
+            <div class="kpi-value" id="kpiAOV">—</div>
+            <div class="kpi-meta"></div>
+          </div>
+          <div class="kpi-card skeleton" id="kpi-pm">
+            <div class="kpi-label">Profit Margin</div>
+            <div class="kpi-value" id="kpiPM">—</div>
+            <div class="kpi-meta"></div>
+          </div>
+        </div>
+
+        <div class="chart-row">
+          <div class="chart-card wide">
+            <div class="chart-card-header">
+              <span class="chart-title">Revenue vs Profit — Monthly</span>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="chartOverview"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-title">Category Mix</span>
+            </div>
+            <div class="chart-wrap donut-wrap">
+              <canvas id="chartCategoryMix"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SALES ───────────────────────────────────── -->
+      <section class="section" id="section-sales">
+        <div class="section-header">
+          <h2 class="section-title">Sales Trend</h2>
+          <span class="section-sub">Monthly revenue and profit over time</span>
+        </div>
+
+        <div class="chart-row">
+          <div class="chart-card full">
+            <div class="chart-card-header">
+              <span class="chart-title">Monthly Revenue Trend</span>
+              <div class="chart-legend" id="salesLegend"></div>
+            </div>
+            <div class="chart-wrap tall">
+              <canvas id="chartSalesTrend"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="chart-card-header">
+            <span class="chart-title">Best &amp; Worst Months</span>
+          </div>
+          <table class="data-table" id="tableBestWorst">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Period</th>
+                <th>Revenue</th>
+                <th>Profit</th>
+                <th>Margin</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyBestWorst">
+              <tr><td colspan="5" class="loading-row">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── PRODUCTS ─────────────────────────────────── -->
+      <section class="section" id="section-products">
+        <div class="section-header">
+          <h2 class="section-title">Product Analysis</h2>
+          <span class="section-sub">Top and bottom performers by revenue, profit and volume</span>
+        </div>
+
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-title">Top 10 by Revenue</span></div>
+            <div class="chart-wrap tall"><canvas id="chartTopRevenue"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-title">Top 10 by Profit</span></div>
+            <div class="chart-wrap tall"><canvas id="chartTopProfit"></canvas></div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="chart-card-header">
+            <span class="chart-title">Product Performance Table</span>
+            <div class="tab-group">
+              <button class="tab active" data-tab="top">Top Performers</button>
+              <button class="tab" data-tab="bottom">Low Performers</button>
+            </div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Revenue</th>
+                <th>Profit</th>
+                <th>Qty</th>
+                <th>Margin</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyProducts">
+              <tr><td colspan="6" class="loading-row">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── CATEGORIES ──────────────────────────────── -->
+      <section class="section" id="section-categories">
+        <div class="section-header">
+          <h2 class="section-title">Category Analysis</h2>
+          <span class="section-sub">Revenue, profit and volume by product category</span>
+        </div>
+
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-title">Revenue by Category</span></div>
+            <div class="chart-wrap"><canvas id="chartCatRevenue"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-title">Profit by Category</span></div>
+            <div class="chart-wrap"><canvas id="chartCatProfit"></canvas></div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card full">
+            <div class="chart-card-header"><span class="chart-title">Category Contribution (%)</span></div>
+            <div class="chart-wrap"><canvas id="chartCatContrib"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── REGIONS ─────────────────────────────────── -->
+      <section class="section" id="section-regions">
+        <div class="section-header">
+          <h2 class="section-title">Regional Analysis</h2>
+          <span class="section-sub">Performance breakdown across regions</span>
+        </div>
+
+        <div class="kpi-grid" id="regionKpis"></div>
+
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-title">Revenue by Region</span></div>
+            <div class="chart-wrap"><canvas id="chartRegRevenue"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><span class="chart-title">Profit by Region</span></div>
+            <div class="chart-wrap"><canvas id="chartRegProfit"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── INSIGHTS ─────────────────────────────────── -->
+      <section class="section" id="section-insights">
+        <div class="section-header">
+          <h2 class="section-title">Business Insights</h2>
+          <span class="section-sub">Automatically surfaced findings from the data</span>
+        </div>
+        <div class="insights-grid" id="insightsGrid">
+          <div class="insight-skeleton"></div>
+          <div class="insight-skeleton"></div>
+          <div class="insight-skeleton"></div>
+          <div class="insight-skeleton"></div>
+          <div class="insight-skeleton"></div>
+          <div class="insight-skeleton"></div>
+        </div>
+      </section>
+
+      <!-- ── FORECAST ─────────────────────────────────── -->
+      <section class="section" id="section-forecast">
+        <div class="section-header">
+          <h2 class="section-title">Sales Forecast</h2>
+          <span class="section-sub">Projected revenue with confidence band</span>
+        </div>
+
+        <div class="forecast-meta" id="forecastMeta"></div>
+
+        <div class="chart-row">
+          <div class="chart-card full">
+            <div class="chart-card-header">
+              <span class="chart-title">Revenue Forecast — Next 6 Months</span>
+              <div class="legend-inline">
+                <span class="legend-dot historical"></span><span>Historical</span>
+                <span class="legend-dot forecast"></span><span>Forecast</span>
+                <span class="legend-dot band"></span><span>Confidence Band</span>
+              </div>
+            </div>
+            <div class="chart-wrap tall">
+              <canvas id="chartForecast"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="chart-card-header"><span class="chart-title">Forecast Values</span></div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Type</th>
+                <th>Forecast Revenue</th>
+                <th>Lower Bound</th>
+                <th>Upper Bound</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyForecast">
+              <tr><td colspan="5" class="loading-row">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
