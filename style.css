@@ -1,763 +1,1418 @@
-/* ─────────────────────────────────────────────────
-   BI Command Centre — style.css
-   Palette: near-black bg, slate surfaces, electric-
-   indigo accent, amber signal, cool neutrals.
-   Typography: Inter (UI) + JetBrains Mono (data)
-───────────────────────────────────────────────── */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-/* ── Tokens ─────────────────────────────────────── */
-:root {
-  /* Background layers */
-  --bg-base:       #0d0f13;
-  --bg-surface:    #13161d;
-  --bg-elevated:   #191d27;
-  --bg-hover:      #1f2433;
+    <title>Business Intelligence Command Centre</title>
 
-  /* Border */
-  --border:        #242837;
-  --border-light:  #2d3245;
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 
-  /* Accent — electric indigo */
-  --accent:        #5b6af8;
-  --accent-dim:    rgba(91, 106, 248, 0.12);
-  --accent-glow:   rgba(91, 106, 248, 0.25);
+<body>
 
-  /* Signal colours */
-  --positive:      #34d17a;
-  --positive-dim:  rgba(52, 209, 122, 0.12);
-  --negative:      #f05252;
-  --negative-dim:  rgba(240, 82, 82, 0.12);
-  --amber:         #f5a623;
-  --amber-dim:     rgba(245, 166, 35, 0.12);
+    <!-- =========================================================
+         APPLICATION LOADER
+    ========================================================== -->
+    <div id="app-loader" class="app-loader">
+        <div class="loader-spinner"></div>
+        <p>Loading Business Intelligence Command Centre...</p>
+    </div>
 
-  /* Text */
-  --text-primary:   #e8eaf0;
-  --text-secondary: #8a90a8;
-  --text-muted:     #525770;
 
-  /* Sidebar */
-  --sidebar-w: 228px;
+    <!-- =========================================================
+         APPLICATION
+    ========================================================== -->
+    <div id="app" class="app-container">
 
-  /* Misc */
-  --radius:    8px;
-  --radius-lg: 12px;
-  --shadow:    0 2px 12px rgba(0,0,0,.4);
-  --transition: 200ms ease;
+        <!-- =====================================================
+             SIDEBAR
+        ====================================================== -->
+        <aside class="sidebar" id="sidebar">
 
-  /* Chart colours */
-  --c1: #5b6af8;
-  --c2: #34d17a;
-  --c3: #f5a623;
-  --c4: #e056b0;
-  --c5: #56c9e0;
-}
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    BI
+                </div>
 
-/* ── Reset ──────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 15px; }
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: var(--bg-base);
-  color: var(--text-primary);
-  display: flex;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+                <div class="brand-text">
+                    <h1>BI Command</h1>
+                    <span>Business Intelligence</span>
+                </div>
+            </div>
 
-a { text-decoration: none; color: inherit; }
-button { cursor: pointer; border: none; background: none; font-family: inherit; }
-select, input { font-family: inherit; }
-canvas { display: block; }
 
-/* ── Scrollbar ───────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--bg-base); }
-::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+            <nav class="sidebar-navigation">
 
-/* ════════════════════════════════════════════════
-   SIDEBAR
-════════════════════════════════════════════════ */
-.sidebar {
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  width: var(--sidebar-w);
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  z-index: 200;
-  transition: transform var(--transition);
-}
+                <p class="navigation-label">MAIN</p>
 
-/* Brand */
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 22px 20px 18px;
-  border-bottom: 1px solid var(--border);
-}
-.brand-mark {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.brand-icon {
-  width: 8px; height: 8px;
-  background: var(--accent);
-  border-radius: 2px;
-  display: block;
-}
-.brand-icon.dim      { background: color-mix(in srgb, var(--accent) 50%, transparent); }
-.brand-icon.dimmer   { background: color-mix(in srgb, var(--accent) 20%, transparent); }
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-.brand-name {
-  font-size: .85rem;
-  font-weight: 700;
-  letter-spacing: .02em;
-  color: var(--text-primary);
-}
-.brand-sub {
-  font-size: .72rem;
-  color: var(--text-muted);
-  letter-spacing: .04em;
-}
+                <a href="#overview"
+                   class="navigation-item active"
+                   data-section="overview">
+                    <span class="navigation-icon">⌂</span>
+                    <span>Executive Overview</span>
+                </a>
 
-/* Nav */
-.sidebar-nav {
-  flex: 1;
-  padding: 16px 12px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.nav-label {
-  display: block;
-  font-size: .68rem;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  padding: 8px 8px 4px;
-}
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 8px 10px;
-  border-radius: var(--radius);
-  font-size: .83rem;
-  font-weight: 450;
-  color: var(--text-secondary);
-  transition: background var(--transition), color var(--transition);
-}
-.nav-item svg { opacity: .7; flex-shrink: 0; }
-.nav-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.nav-item:hover svg { opacity: 1; }
-.nav-item.active {
-  background: var(--accent-dim);
-  color: var(--accent);
-  font-weight: 600;
-}
-.nav-item.active svg { opacity: 1; color: var(--accent); }
+                <a href="#sales"
+                   class="navigation-item"
+                   data-section="sales">
+                    <span class="navigation-icon">↗</span>
+                    <span>Sales Analysis</span>
+                </a>
 
-/* Sidebar footer */
-.sidebar-footer {
-  padding: 14px 20px;
-  border-top: 1px solid var(--border);
-}
-.data-status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  flex-shrink: 0;
-  transition: background .4s;
-}
-.status-dot.ok     { background: var(--positive); box-shadow: 0 0 6px var(--positive); }
-.status-dot.error  { background: var(--negative); }
-.status-text {
-  font-size: .75rem;
-  color: var(--text-muted);
-}
+                <a href="#products"
+                   class="navigation-item"
+                   data-section="products">
+                    <span class="navigation-icon">▦</span>
+                    <span>Products</span>
+                </a>
 
-/* ════════════════════════════════════════════════
-   MAIN WRAP
-════════════════════════════════════════════════ */
-.main-wrap {
-  margin-left: var(--sidebar-w);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
+                <a href="#categories"
+                   class="navigation-item"
+                   data-section="categories">
+                    <span class="navigation-icon">◈</span>
+                    <span>Categories</span>
+                </a>
 
-/* ── Top bar ───────────────────────────────────── */
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 0 24px;
-  height: 58px;
-  flex-wrap: wrap;
-}
-.topbar-title {
-  font-size: .88rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  min-width: 140px;
-}
-.topbar-filters {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-left: auto;
-}
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.filter-label {
-  font-size: .72rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-.filter-select {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
-  color: var(--text-primary);
-  border-radius: 6px;
-  padding: 5px 28px 5px 10px;
-  font-size: .78rem;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a90a8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 9px center;
-  cursor: pointer;
-  transition: border-color var(--transition);
-}
-.filter-select:focus { outline: none; border-color: var(--accent); }
+                <a href="#regions"
+                   class="navigation-item"
+                   data-section="regions">
+                    <span class="navigation-icon">◎</span>
+                    <span>Regions</span>
+                </a>
 
-.btn-apply, .btn-reset {
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: .78rem;
-  font-weight: 600;
-  transition: background var(--transition), opacity var(--transition);
-}
-.btn-apply {
-  background: var(--accent);
-  color: #fff;
-}
-.btn-apply:hover { opacity: .85; }
-.btn-reset {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary);
-}
-.btn-reset:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
+                <a href="#insights"
+                   class="navigation-item"
+                   data-section="insights">
+                    <span class="navigation-icon">✦</span>
+                    <span>Business Insights</span>
+                </a>
 
-.sidebar-toggle {
-  display: none;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px;
-}
-.sidebar-toggle span {
-  display: block;
-  width: 18px; height: 1.5px;
-  background: var(--text-secondary);
-  border-radius: 1px;
-  transition: var(--transition);
-}
+                <a href="#forecast"
+                   class="navigation-item"
+                   data-section="forecast">
+                    <span class="navigation-icon">⌁</span>
+                    <span>Forecasting</span>
+                </a>
 
-/* ── Content area ─────────────────────────────── */
-.content {
-  flex: 1;
-  padding: 28px 28px 48px;
-  max-width: 1400px;
-  width: 100%;
-}
+            </nav>
 
-/* Sections */
-.section { display: none; }
-.section.active { display: block; }
 
-.section-header {
-  margin-bottom: 22px;
-}
-.section-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -.01em;
-}
-.section-sub {
-  display: block;
-  font-size: .8rem;
-  color: var(--text-muted);
-  margin-top: 3px;
-}
+            <div class="sidebar-footer">
 
-/* ════════════════════════════════════════════════
-   KPI CARDS
-════════════════════════════════════════════════ */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
-}
+                <div class="system-status">
+                    <span class="status-dot"></span>
 
-.kpi-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px 22px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color var(--transition);
-}
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--accent);
-  opacity: 0;
-  transition: opacity var(--transition);
-}
-.kpi-card:hover { border-color: var(--border-light); }
-.kpi-card:hover::before { opacity: 1; }
+                    <div>
+                        <strong>System Online</strong>
+                        <small>Data API connected</small>
+                    </div>
+                </div>
 
-.kpi-label {
-  font-size: .72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-}
-.kpi-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.6rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  letter-spacing: -.02em;
-  line-height: 1;
-}
-.kpi-meta {
-  font-size: .73rem;
-  color: var(--text-muted);
-  margin-top: 8px;
-  min-height: 16px;
-}
-.kpi-meta.up   { color: var(--positive); }
-.kpi-meta.down { color: var(--negative); }
+            </div>
 
-/* Skeleton loading */
-.skeleton { animation: shimmer 1.6s infinite; }
-.skeleton .kpi-value,
-.skeleton .kpi-meta {
-  background: var(--bg-hover);
-  border-radius: 4px;
-  color: transparent;
-}
-.skeleton .kpi-value { min-height: 28px; }
-.skeleton .kpi-meta  { min-height: 14px; width: 60%; }
+        </aside>
 
-@keyframes shimmer {
-  0%   { opacity: 1; }
-  50%  { opacity: .5; }
-  100% { opacity: 1; }
-}
 
-/* ════════════════════════════════════════════════
-   CHART CARDS
-════════════════════════════════════════════════ */
-.chart-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-.chart-card.wide  { grid-column: span 1; flex: 2; }
-.chart-card.full  { grid-column: 1 / -1; }
+        <!-- =====================================================
+             MAIN CONTENT
+        ====================================================== -->
+        <main class="main-content">
 
-.chart-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.chart-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px 0;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.chart-title {
-  font-size: .82rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  letter-spacing: .01em;
-}
-.chart-wrap {
-  padding: 16px 18px 20px;
-  height: 260px;
-  position: relative;
-}
-.chart-wrap.tall   { height: 320px; }
-.chart-wrap.donut-wrap { height: 260px; }
+            <!-- =================================================
+                 TOP HEADER
+            ================================================== -->
+            <header class="dashboard-header">
 
-/* Chart legend inline */
-.legend-inline {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: .73rem;
-  color: var(--text-muted);
-}
-.legend-dot {
-  display: inline-block;
-  width: 10px; height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-.legend-dot.historical { background: var(--accent); }
-.legend-dot.forecast   { background: var(--amber); }
-.legend-dot.band       { background: rgba(245,166,35,.3); }
+                <div class="header-left">
 
-/* ════════════════════════════════════════════════
-   TABLE CARD
-════════════════════════════════════════════════ */
-.table-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-.table-card .chart-card-header { padding-bottom: 0; margin-bottom: 0; }
+                    <button
+                        type="button"
+                        id="sidebar-toggle"
+                        class="sidebar-toggle"
+                        aria-label="Toggle navigation">
+                        ☰
+                    </button>
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: .8rem;
-}
-.data-table thead {
-  background: var(--bg-elevated);
-}
-.data-table th {
-  padding: 10px 16px;
-  text-align: left;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-.data-table td {
-  padding: 11px 16px;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-primary);
-  font-size: .8rem;
-}
-.data-table td:first-child {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .72rem;
-  color: var(--text-muted);
-}
-.data-table tbody tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover td { background: var(--bg-elevated); }
+                    <div>
+                        <p class="header-eyebrow">
+                            BUSINESS INTELLIGENCE
+                        </p>
 
-.data-table td.mono {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .77rem;
-}
+                        <h2>
+                            Command Centre
+                        </h2>
+                    </div>
 
-.loading-row {
-  text-align: center;
-  color: var(--text-muted);
-  font-style: italic;
-  padding: 28px !important;
-}
+                </div>
 
-/* Badges */
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: .68rem;
-  font-weight: 600;
-}
-.badge.positive { background: var(--positive-dim); color: var(--positive); }
-.badge.negative { background: var(--negative-dim); color: var(--negative); }
-.badge.neutral  { background: var(--accent-dim);   color: var(--accent); }
-.badge.amber    { background: var(--amber-dim);    color: var(--amber); }
 
-/* Tabs */
-.tab-group {
-  display: flex;
-  gap: 0;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 2px;
-}
-.tab {
-  padding: 5px 12px;
-  border-radius: 4px;
-  font-size: .74rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  transition: background var(--transition), color var(--transition);
-}
-.tab.active {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.tab:hover:not(.active) { color: var(--text-secondary); }
+                <div class="header-right">
 
-/* ════════════════════════════════════════════════
-   INSIGHTS PANEL
-════════════════════════════════════════════════ */
-.insights-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-}
+                    <div class="last-updated">
+                        <span>Last updated</span>
+                        <strong id="last-updated">
+                            Loading...
+                        </strong>
+                    </div>
 
-.insight-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-}
-.insight-card::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 3px; height: 100%;
-  border-radius: 3px 0 0 3px;
-}
-.insight-card.positive::after { background: var(--positive); }
-.insight-card.negative::after { background: var(--negative); }
-.insight-card.neutral::after  { background: var(--accent); }
-.insight-card.amber::after    { background: var(--amber); }
+                    <button
+                        type="button"
+                        id="refresh-dashboard"
+                        class="refresh-button">
+                        ↻
+                        <span>Refresh</span>
+                    </button>
 
-.insight-type {
-  font-size: .67rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 6px;
-  padding-left: 2px;
-}
-.insight-card.positive .insight-type { color: var(--positive); }
-.insight-card.negative .insight-type { color: var(--negative); }
-.insight-card.neutral  .insight-type { color: var(--accent); }
-.insight-card.amber    .insight-type { color: var(--amber); }
+                </div>
 
-.insight-title {
-  font-size: .88rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 5px;
-}
-.insight-detail {
-  font-size: .78rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-.insight-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.2rem;
-  font-weight: 500;
-  margin-top: 10px;
-}
-.insight-card.positive .insight-value { color: var(--positive); }
-.insight-card.negative .insight-value { color: var(--negative); }
-.insight-card.neutral  .insight-value { color: var(--accent); }
-.insight-card.amber    .insight-value { color: var(--amber); }
+            </header>
 
-.insight-skeleton {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  height: 120px;
-  animation: shimmer 1.6s infinite;
-}
 
-/* ════════════════════════════════════════════════
-   FORECAST
-════════════════════════════════════════════════ */
-.forecast-meta {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-.forecast-tag {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 7px 14px;
-  font-size: .77rem;
-  color: var(--text-secondary);
-}
-.forecast-tag strong { color: var(--text-primary); font-weight: 600; }
+            <!-- =================================================
+                 FILTER PANEL
+            ================================================== -->
+            <section class="filter-panel">
 
-/* ════════════════════════════════════════════════
-   REGION KPI CARDS (coloured)
-════════════════════════════════════════════════ */
-.region-kpi {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
-  position: relative;
-}
-.region-kpi-name {
-  font-size: .72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-.region-kpi-revenue {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.35rem;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-.region-kpi-sub {
-  font-size: .74rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
+                <div class="filter-heading">
 
-/* ════════════════════════════════════════════════
-   TOAST
-════════════════════════════════════════════════ */
-.toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 999;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  padding: 12px 18px;
-  font-size: .8rem;
-  color: var(--text-secondary);
-  box-shadow: var(--shadow);
-  transform: translateY(12px);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s, transform .25s;
-}
-.toast.show {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-.toast.error  { border-color: var(--negative); color: var(--negative); }
-.toast.success{ border-color: var(--positive); color: var(--positive); }
+                    <div>
+                        <p class="section-eyebrow">
+                            DATA CONTROLS
+                        </p>
 
-/* ════════════════════════════════════════════════
-   CHART LEGEND (generated)
-════════════════════════════════════════════════ */
-.chart-legend {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-.chart-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: .72rem;
-  color: var(--text-muted);
-}
-.chart-legend-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+                        <h3>Analyse your business</h3>
+                    </div>
 
-/* ════════════════════════════════════════════════
-   RESPONSIVE
-════════════════════════════════════════════════ */
-@media (max-width: 900px) {
-  .sidebar {
-    transform: translateX(-100%);
-  }
-  .sidebar.open {
-    transform: translateX(0);
-  }
-  .main-wrap {
-    margin-left: 0;
-  }
-  .sidebar-toggle {
-    display: flex;
-  }
-  .chart-row {
-    grid-template-columns: 1fr;
-  }
-  .chart-card.wide,
-  .chart-card.full {
-    grid-column: 1;
-  }
-  .topbar {
-    padding: 0 16px;
-    height: auto;
-    min-height: 58px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-  }
-  .topbar-filters {
-    margin-left: 0;
-    width: 100%;
-    padding-bottom: 4px;
-  }
-}
+                    <button
+                        type="button"
+                        id="reset-filters"
+                        class="reset-filter-button">
+                        Reset Filters
+                    </button>
 
-@media (max-width: 600px) {
-  .content { padding: 18px 14px 40px; }
-  .kpi-grid { grid-template-columns: 1fr 1fr; }
-  .kpi-value { font-size: 1.25rem; }
-  .insights-grid { grid-template-columns: 1fr; }
-  .filter-group { width: 100%; }
-  .filter-select { flex: 1; }
-}
+                </div>
+
+
+                <div class="filter-grid">
+
+                    <div class="filter-group">
+
+                        <label for="year-filter">
+                            Year
+                        </label>
+
+                        <select id="year-filter">
+                            <option value="">All Years</option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="filter-group">
+
+                        <label for="month-filter">
+                            Month
+                        </label>
+
+                        <select id="month-filter">
+                            <option value="">All Months</option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="filter-group">
+
+                        <label for="region-filter">
+                            Region
+                        </label>
+
+                        <select id="region-filter">
+                            <option value="">All Regions</option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="filter-group">
+
+                        <label for="category-filter">
+                            Category
+                        </label>
+
+                        <select id="category-filter">
+                            <option value="">All Categories</option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="filter-group">
+
+                        <label for="product-filter">
+                            Product
+                        </label>
+
+                        <select id="product-filter">
+                            <option value="">All Products</option>
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 ERROR MESSAGE
+            ================================================== -->
+            <div
+                id="global-error"
+                class="error-state"
+                role="alert"
+                hidden>
+
+                <div class="error-icon">!</div>
+
+                <div>
+                    <strong>Unable to load dashboard data</strong>
+                    <p id="global-error-message">
+                        Please check the backend connection and try again.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    id="retry-dashboard">
+                    Retry
+                </button>
+
+            </div>
+
+
+            <!-- =================================================
+                 EXECUTIVE OVERVIEW
+            ================================================== -->
+            <section
+                id="overview"
+                class="dashboard-section">
+
+                <div class="section-header">
+
+                    <div>
+                        <p class="section-eyebrow">
+                            EXECUTIVE OVERVIEW
+                        </p>
+
+                        <h2>Business Performance</h2>
+
+                        <p>
+                            A high-level view of revenue, profitability,
+                            orders and business growth.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <!-- KPI CARDS -->
+                <div class="kpi-grid">
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-top">
+                            <span class="kpi-label">
+                                Total Revenue
+                            </span>
+
+                            <span class="kpi-icon">
+                                ₹
+                            </span>
+                        </div>
+
+                        <div
+                            id="total-revenue"
+                            class="kpi-value">
+                            —
+                        </div>
+
+                        <div class="kpi-footer">
+                            <span
+                                id="revenue-growth"
+                                class="kpi-change">
+                                —
+                            </span>
+
+                            <span>
+                                vs previous period
+                            </span>
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-top">
+                            <span class="kpi-label">
+                                Total Profit
+                            </span>
+
+                            <span class="kpi-icon">
+                                +
+                            </span>
+                        </div>
+
+                        <div
+                            id="total-profit"
+                            class="kpi-value">
+                            —
+                        </div>
+
+                        <div class="kpi-footer">
+                            <span
+                                id="profit-margin"
+                                class="kpi-change">
+                                —
+                            </span>
+
+                            <span>
+                                profit margin
+                            </span>
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-top">
+                            <span class="kpi-label">
+                                Total Orders
+                            </span>
+
+                            <span class="kpi-icon">
+                                #
+                            </span>
+                        </div>
+
+                        <div
+                            id="total-orders"
+                            class="kpi-value">
+                            —
+                        </div>
+
+                        <div class="kpi-footer">
+                            <span>
+                                Completed transactions
+                            </span>
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-top">
+                            <span class="kpi-label">
+                                Total Quantity
+                            </span>
+
+                            <span class="kpi-icon">
+                                ≡
+                            </span>
+                        </div>
+
+                        <div
+                            id="total-quantity"
+                            class="kpi-value">
+                            —
+                        </div>
+
+                        <div class="kpi-footer">
+                            <span>
+                                Units sold
+                            </span>
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-top">
+                            <span class="kpi-label">
+                                Average Order Value
+                            </span>
+
+                            <span class="kpi-icon">
+                                AOV
+                            </span>
+                        </div>
+
+                        <div
+                            id="average-order-value"
+                            class="kpi-value">
+                            —
+                        </div>
+
+                        <div class="kpi-footer">
+                            <span>
+                                Revenue per order
+                            </span>
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-top">
+                            <span class="kpi-label">
+                                Revenue Growth
+                            </span>
+
+                            <span class="kpi-icon">
+                                ↗
+                            </span>
+                        </div>
+
+                        <div
+                            id="revenue-growth-value"
+                            class="kpi-value">
+                            —
+                        </div>
+
+                        <div class="kpi-footer">
+                            <span>
+                                Current period growth
+                            </span>
+                        </div>
+
+                    </article>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 SALES ANALYSIS
+            ================================================== -->
+            <section
+                id="sales"
+                class="dashboard-section">
+
+                <div class="section-header">
+
+                    <div>
+                        <p class="section-eyebrow">
+                            SALES ANALYSIS
+                        </p>
+
+                        <h2>Revenue & Profit Trends</h2>
+
+                        <p>
+                            Track how sales and profitability change
+                            over time.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="chart-grid chart-grid-large">
+
+                    <!-- Monthly Revenue -->
+                    <article class="chart-card chart-card-wide">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Monthly Revenue</h3>
+                                <span>
+                                    Revenue performance over time
+                                </span>
+                            </div>
+
+                            <span class="chart-badge">
+                                Revenue
+                            </span>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="monthly-revenue-chart"></canvas>
+
+                            <div
+                                id="monthly-revenue-loading"
+                                class="chart-loading">
+                                Loading chart...
+                            </div>
+
+                            <div
+                                id="monthly-revenue-empty"
+                                class="chart-empty"
+                                hidden>
+                                No revenue data available.
+                            </div>
+                        </div>
+
+                    </article>
+
+
+                    <!-- Monthly Profit -->
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Monthly Profit</h3>
+                                <span>
+                                    Profit performance
+                                </span>
+                            </div>
+
+                            <span class="chart-badge">
+                                Profit
+                            </span>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="monthly-profit-chart"></canvas>
+
+                            <div
+                                id="monthly-profit-loading"
+                                class="chart-loading">
+                                Loading chart...
+                            </div>
+
+                            <div
+                                id="monthly-profit-empty"
+                                class="chart-empty"
+                                hidden>
+                                No profit data available.
+                            </div>
+                        </div>
+
+                    </article>
+
+
+                    <!-- Revenue vs Profit -->
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Revenue vs Profit</h3>
+                                <span>
+                                    Financial performance comparison
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="revenue-profit-chart"></canvas>
+
+                            <div
+                                id="revenue-profit-loading"
+                                class="chart-loading">
+                                Loading chart...
+                            </div>
+                        </div>
+
+                    </article>
+
+
+                    <!-- Yearly Comparison -->
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Yearly Comparison</h3>
+                                <span>
+                                    Year-over-year performance
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="yearly-comparison-chart"></canvas>
+
+                            <div
+                                id="yearly-comparison-loading"
+                                class="chart-loading">
+                                Loading chart...
+                            </div>
+                        </div>
+
+                    </article>
+
+                </div>
+
+
+                <!-- Best / Worst Months -->
+                <div class="performance-summary">
+
+                    <article class="summary-card positive">
+
+                        <div class="summary-icon">
+                            ↑
+                        </div>
+
+                        <div>
+                            <span class="summary-label">
+                                Best Performing Month
+                            </span>
+
+                            <strong id="best-month">
+                                —
+                            </strong>
+
+                            <small id="best-month-value">
+                                —
+                            </small>
+                        </div>
+
+                    </article>
+
+
+                    <article class="summary-card negative">
+
+                        <div class="summary-icon">
+                            ↓
+                        </div>
+
+                        <div>
+                            <span class="summary-label">
+                                Weakest Performing Month
+                            </span>
+
+                            <strong id="worst-month">
+                                —
+                            </strong>
+
+                            <small id="worst-month-value">
+                                —
+                            </small>
+                        </div>
+
+                    </article>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 PRODUCT ANALYSIS
+            ================================================== -->
+            <section
+                id="products"
+                class="dashboard-section">
+
+                <div class="section-header">
+
+                    <div>
+                        <p class="section-eyebrow">
+                            PRODUCT ANALYSIS
+                        </p>
+
+                        <h2>Product Performance</h2>
+
+                        <p>
+                            Identify the products driving revenue,
+                            profit and volume.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="chart-grid">
+
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Top Products by Revenue</h3>
+                                <span>
+                                    Highest revenue-generating products
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container chart-container-tall">
+                            <canvas id="top-products-revenue-chart"></canvas>
+
+                            <div
+                                id="top-products-revenue-loading"
+                                class="chart-loading">
+                                Loading chart...
+                            </div>
+                        </div>
+
+                    </article>
+
+
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Top Products by Profit</h3>
+                                <span>
+                                    Most profitable products
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container chart-container-tall">
+                            <canvas id="top-products-profit-chart"></canvas>
+
+                            <div
+                                id="top-products-profit-loading"
+                                class="chart-loading">
+                                Loading chart...
+                            </div>
+                        </div>
+
+                    </article>
+
+
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Top Products by Quantity</h3>
+                                <span>
+                                    Highest-volume products
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container chart-container-tall">
+                            <canvas id="top-products-quantity-chart"></canvas>
+
+                            <div
+                                id="top-products-quantity-loading"
+                                class="chart-loading">
+                                Loading chart...
+                            </div>
+                        </div>
+
+                    </article>
+
+                </div>
+
+
+                <!-- Product Table -->
+                <article class="table-card">
+
+                    <div class="table-card-header">
+
+                        <div>
+                            <p class="section-eyebrow">
+                                PRODUCT RANKING
+                            </p>
+
+                            <h3>Product Performance Table</h3>
+                        </div>
+
+                        <div class="table-search">
+
+                            <label
+                                for="product-search"
+                                class="sr-only">
+                                Search products
+                            </label>
+
+                            <input
+                                type="search"
+                                id="product-search"
+                                placeholder="Search products...">
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="table-wrapper">
+
+                        <table id="product-performance-table">
+
+                            <thead>
+
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Revenue</th>
+                                    <th>Profit</th>
+                                    <th>Quantity</th>
+                                    <th>Margin</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="product-table-body">
+
+                                <tr>
+                                    <td
+                                        colspan="7"
+                                        class="table-loading">
+                                        Loading product data...
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    <div
+                        id="product-table-empty"
+                        class="table-empty"
+                        hidden>
+                        No product data matches the selected filters.
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            <!-- =================================================
+                 CATEGORY ANALYSIS
+            ================================================== -->
+            <section
+                id="categories"
+                class="dashboard-section">
+
+                <div class="section-header">
+
+                    <div>
+                        <p class="section-eyebrow">
+                            CATEGORY ANALYSIS
+                        </p>
+
+                        <h2>Category Performance</h2>
+
+                        <p>
+                            Compare business contribution across
+                            product categories.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="chart-grid">
+
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Revenue by Category</h3>
+                                <span>
+                                    Category revenue contribution
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="category-revenue-chart"></canvas>
+                        </div>
+
+                    </article>
+
+
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Profit by Category</h3>
+                                <span>
+                                    Category profitability
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="category-profit-chart"></canvas>
+                        </div>
+
+                    </article>
+
+
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Quantity by Category</h3>
+                                <span>
+                                    Units sold by category
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="category-quantity-chart"></canvas>
+                        </div>
+
+                    </article>
+
+
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Category Contribution</h3>
+                                <span>
+                                    Overall revenue contribution
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="category-contribution-chart"></canvas>
+                        </div>
+
+                    </article>
+
+                </div>
+
+
+                <div
+                    id="category-summary"
+                    class="category-summary-grid">
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 REGIONAL ANALYSIS
+            ================================================== -->
+            <section
+                id="regions"
+                class="dashboard-section">
+
+                <div class="section-header">
+
+                    <div>
+                        <p class="section-eyebrow">
+                            REGIONAL ANALYSIS
+                        </p>
+
+                        <h2>Regional Performance</h2>
+
+                        <p>
+                            Understand how different regions contribute
+                            to overall business results.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="chart-grid">
+
+                    <article class="chart-card chart-card-wide">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Revenue by Region</h3>
+                                <span>
+                                    Regional revenue comparison
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="region-revenue-chart"></canvas>
+                        </div>
+
+                    </article>
+
+
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Profit by Region</h3>
+                                <span>
+                                    Regional profitability
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="region-profit-chart"></canvas>
+                        </div>
+
+                    </article>
+
+
+                    <article class="chart-card">
+
+                        <div class="chart-card-header">
+
+                            <div>
+                                <h3>Orders by Region</h3>
+                                <span>
+                                    Transaction distribution
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="region-orders-chart"></canvas>
+                        </div>
+
+                    </article>
+
+                </div>
+
+
+                <article class="table-card">
+
+                    <div class="table-card-header">
+
+                        <div>
+                            <p class="section-eyebrow">
+                                REGIONAL COMPARISON
+                            </p>
+
+                            <h3>Regional Performance Table</h3>
+                        </div>
+
+                    </div>
+
+
+                    <div class="table-wrapper">
+
+                        <table id="region-performance-table">
+
+                            <thead>
+
+                                <tr>
+                                    <th>Region</th>
+                                    <th>Revenue</th>
+                                    <th>Profit</th>
+                                    <th>Orders</th>
+                                    <th>Quantity</th>
+                                    <th>Profit Margin</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="region-table-body">
+
+                                <tr>
+                                    <td
+                                        colspan="6"
+                                        class="table-loading">
+                                        Loading regional data...
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            <!-- =================================================
+                 BUSINESS INSIGHTS
+            ================================================== -->
+            <section
+                id="insights"
+                class="dashboard-section">
+
+                <div class="section-header">
+
+                    <div>
+                        <p class="section-eyebrow">
+                            BUSINESS INTELLIGENCE
+                        </p>
+
+                        <h2>Automated Business Insights</h2>
+
+                        <p>
+                            Data-driven findings generated automatically
+                            from the selected dataset.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="insights-grid"
+                    class="insights-grid">
+
+                    <article class="insight-card loading-placeholder">
+                        <div class="insight-icon">✦</div>
+
+                        <div>
+                            <span>Business Insight</span>
+                            <h3>Analysing your data...</h3>
+                            <p>
+                                Insights will appear here once the
+                                dashboard data has loaded.
+                            </p>
+                        </div>
+                    </article>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 FORECASTING
+            ================================================== -->
+            <section
+                id="forecast"
+                class="dashboard-section">
+
+                <div class="section-header">
+
+                    <div>
+                        <p class="section-eyebrow">
+                            PREDICTIVE ANALYTICS
+                        </p>
+
+                        <h2>Sales Forecast</h2>
+
+                        <p>
+                            A lightweight Python forecasting model
+                            estimates upcoming sales performance.
+                        </p>
+                    </div>
+
+
+                    <div class="forecast-controls">
+
+                        <label for="forecast-period">
+                            Forecast period
+                        </label>
+
+                        <select id="forecast-period">
+                            <option value="3">3 Months</option>
+                            <option value="6" selected>
+                                6 Months
+                            </option>
+                            <option value="12">
+                                12 Months
+                            </option>
+                        </select>
+
+                        <button
+                            type="button"
+                            id="run-forecast"
+                            class="primary-button">
+                            Generate Forecast
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <article class="forecast-card">
+
+                    <div class="forecast-header">
+
+                        <div>
+
+                            <span class="forecast-model">
+                                MODEL
+                            </span>
+
+                            <h3 id="forecast-model-name">
+                                Loading forecasting model...
+                            </h3>
+
+                            <p id="forecast-description">
+                                Preparing historical sales data.
+                            </p>
+
+                        </div>
+
+
+                        <div class="forecast-confidence">
+
+                            <span>
+                                Forecast uncertainty
+                            </span>
+
+                            <strong id="forecast-confidence-value">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="forecast-chart-container">
+
+                        <canvas id="forecast-chart"></canvas>
+
+                        <div
+                            id="forecast-loading"
+                            class="chart-loading">
+                            Generating forecast...
+                        </div>
+
+                        <div
+                            id="forecast-empty"
+                            class="chart-empty"
+                            hidden>
+                            Forecast data is not available.
+                        </div>
+
+                    </div>
+
+
+                    <div class="forecast-summary">
+
+                        <div class="forecast-stat">
+
+                            <span>
+                                Historical Period
+                            </span>
+
+                            <strong id="forecast-historical-period">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <div class="forecast-stat">
+
+                            <span>
+                                Forecast Period
+                            </span>
+
+                            <strong id="forecast-period-display">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <div class="forecast-stat">
+
+                            <span>
+                                Expected Revenue
+                            </span>
+
+                            <strong id="forecast-total">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <div class="forecast-stat">
+
+                            <span>
+                                Expected Growth
+                            </span>
+
+                            <strong id="forecast-growth">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            <!-- =================================================
+                 FOOTER
+            ================================================== -->
+            <footer class="dashboard-footer">
+
+                <div>
+                    <strong>
+                        Business Intelligence Command Centre
+                    </strong>
+
+                    <span>
+                        Interactive Business Analytics Platform
+                    </span>
+                </div>
+
+                <div>
+                    <span>
+                        Powered by Python · Flask · Pandas · SQLite
+                    </span>
+                </div>
+
+            </footer>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================================================
+         MOBILE SIDEBAR OVERLAY
+    ========================================================== -->
+    <div
+        id="sidebar-overlay"
+        class="sidebar-overlay"
+        hidden>
+    </div>
+
+
+    <!-- =========================================================
+         JAVASCRIPT
+         
+         The actual API logic will be placed in:
+         static/script.js
+    ========================================================== -->
+    <script src="static/script.js"></script>
+
+</body>
+</html>
