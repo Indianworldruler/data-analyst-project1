@@ -1,622 +1,2189 @@
-# ─────────────────────────────────────────────────
-# BI Command Centre — app.py
-# Flask + Pandas + SQLite + Scikit-learn
-# Place your CSV at: data/ecommerce.csv
-# Run: python app.py
-# ─────────────────────────────────────────────────
+"""
+BUSINESS INTELLIGENCE COMMAND CENTRE
+------------------------------------
+Flask backend for the interactive Data Analyst portfolio project.
 
-import os
-import math
-import warnings
+Files expected:
+    app.py
+    business_data.csv          -> automatically generated if missing
+    business_intelligence.db  -> automatically generated
+    templates/
+        index.html
+    static/
+        style.css
+        script.js
+
+Run:
+    python app.py
+"""
+
+from datetime import datetime
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
+from sklearn.linear_model import LinearRegression
 
-warnings.filterwarnings('ignore')
 
-# ── App & DB setup ────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH  = os.path.join(BASE_DIR, 'data', 'bi_data.sqlite')
-CSV_PATH = os.path.join(BASE_DIR, 'data', 'ecommerce.csv')
+# ============================================================
+# APPLICATION CONFIGURATION
+# ============================================================
 
-os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)
+BASE_DIR = Path(__file__).resolve().parent
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI']        = f'sqlite:///{DB_PATH}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JSON_SORT_KEYS']                 = False
+CSV_FILE = BASE_DIR / "business_data.csv"
+DATABASE_FILE = BASE_DIR / "business_intelligence.db"
+
+app = Flask(
+    __name__,
+    template_folder="templates",
+    static_folder="static"
+)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    f"sqlite:///{DATABASE_FILE}"
+)
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# ── CORS for local frontend dev ───────────────────
-@app.after_request
-def add_cors(response):
-    response.headers['Access-Control-Allow-Origin']  = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    return response
+CORS(app)
 
-# ════════════════════════════════════════════════
-# DB INITIALISATION
-# ════════════════════════════════════════════════
 
-COLUMN_MAP = {
-    # common column aliases from the Kaggle dataset
-    'Order ID':        'order_id',
-    'Order Date':      'order_date',
-    'Ship Date':       'ship_date',
-    'Ship Mode':       'ship_mode',
-    'Customer ID':     'customer_id',
-    'Customer Name':   'customer_name',
-    'Segment':         'segment',
-    'Country':         'country',
-    'City':            'city',
-    'State':           'state',
-    'Postal Code':     'postal_code',
-    'Region':          'region',
-    'Product ID':      'product_id',
-    'Category':        'category',
-    'Sub-Category':    'sub_category',
-    'Product Name':    'product_name',
-    'Sales':           'sales',
-    'Quantity':        'quantity',
-    'Discount':        'discount',
-    'Profit':          'profit',
-}
+# ============================================================
+# DATABASE MODEL
+# ============================================================
 
-def load_csv_to_db():
-    """Read CSV, clean it, persist to SQLite."""
-    if not os.path.exists(CSV_PATH):
-        raise FileNotFoundError(
-            f"Dataset not found at {CSV_PATH}. "
-            "Download from Kaggle and place the CSV at data/ecommerce.csv"
+class Sales(db.Model):
+    __tablename__ = "sales"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    order_date = db.Column(
+        db.Date,
+        nullable=False
+    )
+
+    order_id = db.Column(
+        db.String(50),
+        nullable=False
+    )
+
+    product = db.Column(
+        db.String(150),
+        nullable=False
+    )
+
+    category = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    region = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    quantity = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    revenue = db.Column(
+        db.Float,
+        nullable=False
+    )
+
+    profit = db.Column(
+        db.Float,
+        nullable=False
+    )
+
+
+# ============================================================
+# SAMPLE DATASET GENERATION
+# ============================================================
+
+def create_dataset():
+    """
+    Creates a realistic e-commerce sales dataset locally.
+
+    No Kaggle dataset is required.
+    The generated CSV is suitable for the dashboard.
+    """
+
+    if CSV_FILE.exists():
+        return
+
+    np.random.seed(42)
+
+    start_date = pd.Timestamp("2022-01-01")
+    end_date = pd.Timestamp("2025-12-31")
+
+    dates = pd.date_range(
+        start=start_date,
+        end=end_date,
+        freq="D"
+    )
+
+    products = {
+        "Electronics": [
+            "Wireless Headphones",
+            "Smartphone",
+            "Laptop",
+            "Bluetooth Speaker",
+            "Smart Watch",
+            "Tablet"
+        ],
+        "Home & Kitchen": [
+            "Coffee Maker",
+            "Air Fryer",
+            "Vacuum Cleaner",
+            "Mixer Grinder",
+            "Electric Kettle",
+            "Cookware Set"
+        ],
+        "Office": [
+            "Office Chair",
+            "Standing Desk",
+            "Mechanical Keyboard",
+            "Wireless Mouse",
+            "Monitor",
+            "Desk Lamp"
+        ],
+        "Fashion": [
+            "Running Shoes",
+            "Denim Jacket",
+            "Backpack",
+            "Cotton Shirt",
+            "Sports T-Shirt",
+            "Casual Sneakers"
+        ],
+        "Beauty": [
+            "Face Serum",
+            "Hair Dryer",
+            "Skin Care Kit",
+            "Perfume",
+            "Electric Trimmer",
+            "Makeup Kit"
+        ]
+    }
+
+    regions = [
+        "North",
+        "South",
+        "East",
+        "West",
+        "Central"
+    ]
+
+    rows = []
+
+    order_number = 100001
+
+    for _ in range(5000):
+
+        date = np.random.choice(dates)
+
+        category = np.random.choice(
+            list(products.keys()),
+            p=[
+                0.28,
+                0.22,
+                0.17,
+                0.20,
+                0.13
+            ]
         )
 
-    df = pd.read_csv(CSV_PATH, encoding='latin-1')
+        product = np.random.choice(
+            products[category]
+        )
 
-    # Normalise column names
-    df.columns = [c.strip() for c in df.columns]
-    df.rename(columns={k: v for k, v in COLUMN_MAP.items() if k in df.columns}, inplace=True)
+        region = np.random.choice(
+            regions,
+            p=[
+                0.22,
+                0.24,
+                0.16,
+                0.25,
+                0.13
+            ]
+        )
 
-    # Ensure required columns exist
-    required = ['order_date', 'sales', 'profit', 'quantity', 'region', 'category', 'product_name']
-    missing  = [c for c in required if c not in df.columns]
-    if missing:
-        raise ValueError(f"CSV is missing columns: {missing}. Found: {list(df.columns)}")
+        quantity = np.random.randint(1, 8)
 
-    # Parse & clean
-    df['order_date'] = pd.to_datetime(df['order_date'], infer_datetime_format=True, errors='coerce')
-    df.dropna(subset=['order_date', 'sales', 'profit'], inplace=True)
+        base_prices = {
+            "Electronics": 18000,
+            "Home & Kitchen": 6500,
+            "Office": 9000,
+            "Fashion": 3500,
+            "Beauty": 2800
+        }
 
-    df['sales']    = pd.to_numeric(df['sales'],    errors='coerce').fillna(0)
-    df['profit']   = pd.to_numeric(df['profit'],   errors='coerce').fillna(0)
-    df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce').fillna(0)
-    df['discount'] = pd.to_numeric(df.get('discount', 0), errors='coerce').fillna(0)
+        base_price = base_prices[category]
 
-    df['year']  = df['order_date'].dt.year
-    df['month'] = df['order_date'].dt.month
-    df['period'] = df['order_date'].dt.to_period('M').astype(str)
+        product_factor = np.random.uniform(
+            0.65,
+            1.45
+        )
 
-    # Ensure string cols
-    for col in ['region', 'category', 'product_name', 'sub_category', 'segment']:
-        if col in df.columns:
-            df[col] = df[col].fillna('Unknown').astype(str).str.strip()
+        revenue = (
+            base_price
+            * product_factor
+            * quantity
+            * np.random.uniform(0.85, 1.15)
+        )
 
-    df.to_sql('orders', con=db.engine, if_exists='replace', index=False)
-    print(f"  Loaded {len(df):,} rows into SQLite.")
+        margin_ranges = {
+            "Electronics": (0.08, 0.20),
+            "Home & Kitchen": (0.12, 0.25),
+            "Office": (0.15, 0.30),
+            "Fashion": (0.18, 0.35),
+            "Beauty": (0.20, 0.38)
+        }
+
+        low_margin, high_margin = margin_ranges[
+            category
+        ]
+
+        margin = np.random.uniform(
+            low_margin,
+            high_margin
+        )
+
+        profit = revenue * margin
+
+        rows.append(
+            {
+                "order_date": date,
+                "order_id": f"ORD-{order_number}",
+                "product": product,
+                "category": category,
+                "region": region,
+                "quantity": quantity,
+                "revenue": round(revenue, 2),
+                "profit": round(profit, 2)
+            }
+        )
+
+        order_number += 1
+
+    df = pd.DataFrame(rows)
+
+    # Add realistic seasonal behaviour.
+    df["month"] = pd.to_datetime(
+        df["order_date"]
+    ).dt.month
+
+    seasonal_multiplier = df["month"].map(
+        {
+            1: 0.90,
+            2: 0.88,
+            3: 0.95,
+            4: 0.92,
+            5: 1.00,
+            6: 1.02,
+            7: 1.04,
+            8: 1.08,
+            9: 1.10,
+            10: 1.25,
+            11: 1.40,
+            12: 1.30
+        }
+    )
+
+    df["revenue"] = (
+        df["revenue"]
+        * seasonal_multiplier
+    ).round(2)
+
+    df["profit"] = (
+        df["profit"]
+        * seasonal_multiplier
+    ).round(2)
+
+    df.drop(
+        columns=["month"],
+        inplace=True
+    )
+
+    # Introduce a small amount of missing data.
+    missing_indices = np.random.choice(
+        df.index,
+        size=15,
+        replace=False
+    )
+
+    df.loc[
+        missing_indices[:7],
+        "region"
+    ] = np.nan
+
+    df.loc[
+        missing_indices[7:],
+        "category"
+    ] = np.nan
+
+    df.to_csv(
+        CSV_FILE,
+        index=False
+    )
+
+
+# ============================================================
+# DATA CLEANING
+# ============================================================
+
+def clean_dataset(df):
+    """
+    Cleans and standardises the source dataset.
+    """
+
+    df = df.copy()
+
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.lower()
+        .str.replace(" ", "_")
+    )
+
+    required_columns = [
+        "order_date",
+        "order_id",
+        "product",
+        "category",
+        "region",
+        "quantity",
+        "revenue",
+        "profit"
+    ]
+
+    missing_columns = [
+        column
+        for column in required_columns
+        if column not in df.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            "Dataset is missing required columns: "
+            + ", ".join(missing_columns)
+        )
+
+    df["order_date"] = pd.to_datetime(
+        df["order_date"],
+        errors="coerce"
+    )
+
+    numeric_columns = [
+        "quantity",
+        "revenue",
+        "profit"
+    ]
+
+    for column in numeric_columns:
+        df[column] = pd.to_numeric(
+            df[column],
+            errors="coerce"
+        )
+
+    text_columns = [
+        "order_id",
+        "product",
+        "category",
+        "region"
+    ]
+
+    for column in text_columns:
+        df[column] = (
+            df[column]
+            .astype("string")
+            .str.strip()
+        )
+
+    df["category"] = df["category"].fillna(
+        "Unknown"
+    )
+
+    df["region"] = df["region"].fillna(
+        "Unknown"
+    )
+
+    df["product"] = df["product"].fillna(
+        "Unknown Product"
+    )
+
+    df["quantity"] = df["quantity"].fillna(
+        0
+    )
+
+    df["revenue"] = df["revenue"].fillna(
+        0
+    )
+
+    df["profit"] = df["profit"].fillna(
+        0
+    )
+
+    df = df.dropna(
+        subset=[
+            "order_date",
+            "order_id"
+        ]
+    )
+
+    df = df.drop_duplicates()
+
+    df["quantity"] = (
+        df["quantity"]
+        .astype(int)
+    )
+
+    df["revenue"] = (
+        df["revenue"]
+        .round(2)
+    )
+
+    df["profit"] = (
+        df["profit"]
+        .round(2)
+    )
+
     return df
 
 
-def init_db():
+# ============================================================
+# DATABASE INITIALISATION
+# ============================================================
+
+def initialise_database():
+    """
+    Creates the SQLite database and loads the CSV.
+    """
+
+    create_dataset()
+
+    df = pd.read_csv(
+        CSV_FILE
+    )
+
+    df = clean_dataset(df)
+
     with app.app_context():
-        if not os.path.exists(DB_PATH):
-            print("Building database from CSV…")
-            load_csv_to_db()
-        else:
-            # Quick sanity check
-            try:
-                with db.engine.connect() as con:
-                    con.execute(text("SELECT 1 FROM orders LIMIT 1"))
-            except Exception:
-                print("Rebuilding database…")
-                load_csv_to_db()
+
+        db.drop_all()
+
+        db.create_all()
+
+        records = []
+
+        for _, row in df.iterrows():
+
+            record = Sales(
+                order_date=row["order_date"].date(),
+                order_id=str(row["order_id"]),
+                product=str(row["product"]),
+                category=str(row["category"]),
+                region=str(row["region"]),
+                quantity=int(row["quantity"]),
+                revenue=float(row["revenue"]),
+                profit=float(row["profit"])
+            )
+
+            records.append(record)
+
+        db.session.bulk_save_objects(
+            records
+        )
+
+        db.session.commit()
 
 
-# ════════════════════════════════════════════════
-# QUERY HELPERS
-# ════════════════════════════════════════════════
+# ============================================================
+# FILTER VALIDATION
+# ============================================================
 
-def parse_filters():
-    """Extract and validate query-string filters."""
-    year     = request.args.get('year', '').strip()
-    region   = request.args.get('region', '').strip()
-    category = request.args.get('category', '').strip()
+def get_filters():
+    """
+    Reads and validates dashboard filters.
+    """
 
-    # Only allow integers for year
-    if year and not year.isdigit():
-        year = ''
+    year = request.args.get(
+        "year",
+        ""
+    ).strip()
 
-    return year, region, category
+    month = request.args.get(
+        "month",
+        ""
+    ).strip()
 
+    region = request.args.get(
+        "region",
+        ""
+    ).strip()
 
-def build_where(year, region, category, alias=''):
-    """Return (where_clause, params_dict) for SQL."""
-    clauses, params = [], {}
-    a = f"{alias}." if alias else ""
+    category = request.args.get(
+        "category",
+        ""
+    ).strip()
+
+    product = request.args.get(
+        "product",
+        ""
+    ).strip()
 
     if year:
-        clauses.append(f"{a}year = :year")
-        params['year'] = int(year)
-    if region:
-        clauses.append(f"{a}region = :region")
-        params['region'] = region
-    if category:
-        clauses.append(f"{a}category = :category")
-        params['category'] = category
-
-    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
-    return where, params
-
-
-def query_df(sql, params=None):
-    """Run a SQL query, return DataFrame."""
-    with db.engine.connect() as con:
-        return pd.read_sql(text(sql), con=con, params=params or {})
-
-
-def safe_float(v):
-    if v is None or (isinstance(v, float) and math.isnan(v)):
-        return None
-    return float(v)
-
-
-def safe_int(v):
-    if v is None:
-        return None
-    return int(v)
-
-
-# ════════════════════════════════════════════════
-# ROUTES — FRONTEND
-# ════════════════════════════════════════════════
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-
-# ════════════════════════════════════════════════
-# API — FILTERS
-# ════════════════════════════════════════════════
-
-@app.route('/api/filters')
-def api_filters():
-    try:
-        years      = query_df("SELECT DISTINCT year FROM orders WHERE year IS NOT NULL ORDER BY year")
-        regions    = query_df("SELECT DISTINCT region FROM orders WHERE region IS NOT NULL ORDER BY region")
-        categories = query_df("SELECT DISTINCT category FROM orders WHERE category IS NOT NULL ORDER BY category")
-
-        return jsonify({
-            'years':      [int(y) for y in years['year'].tolist()],
-            'regions':    regions['region'].tolist(),
-            'categories': categories['category'].tolist(),
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# ════════════════════════════════════════════════
-# API — OVERVIEW
-# ════════════════════════════════════════════════
-
-@app.route('/api/overview')
-def api_overview():
-    try:
-        year, region, category = parse_filters()
-        where, params = build_where(year, region, category)
-
-        sql = f"""
-            SELECT
-                SUM(sales)           AS total_revenue,
-                SUM(profit)          AS total_profit,
-                COUNT(DISTINCT COALESCE(order_id, rowid)) AS total_orders,
-                SUM(quantity)        AS total_quantity,
-                AVG(sales)           AS avg_order_value,
-                SUM(profit) / NULLIF(SUM(sales), 0) AS profit_margin
-            FROM orders {where}
-        """
-        row = query_df(sql, params).iloc[0]
-
-        # Revenue growth: compare last full year vs prior year (ignore filter year)
-        growth = None
         try:
-            gdf = query_df("""
-                SELECT year, SUM(sales) AS rev FROM orders
-                GROUP BY year ORDER BY year DESC LIMIT 2
-            """)
-            if len(gdf) == 2:
-                curr, prev = gdf.iloc[0]['rev'], gdf.iloc[1]['rev']
-                if prev and prev != 0:
-                    growth = (curr - prev) / prev
-        except Exception:
-            pass
+            year = int(year)
 
-        return jsonify({
-            'total_revenue':   safe_float(row['total_revenue']),
-            'total_profit':    safe_float(row['total_profit']),
-            'total_orders':    safe_int(row['total_orders']),
-            'total_quantity':  safe_int(row['total_quantity']),
-            'avg_order_value': safe_float(row['avg_order_value']),
-            'profit_margin':   safe_float(row['profit_margin']),
-            'revenue_growth':  safe_float(growth),
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            if year < 2000 or year > 2100:
+                raise ValueError
+
+        except ValueError:
+            raise ValueError(
+                "Invalid year filter."
+            )
+
+    if month:
+        try:
+            month = int(month)
+
+            if month < 1 or month > 12:
+                raise ValueError
+
+        except ValueError:
+            raise ValueError(
+                "Invalid month filter."
+            )
+
+    return {
+        "year": year,
+        "month": month,
+        "region": region,
+        "category": category,
+        "product": product
+    }
 
 
-# ════════════════════════════════════════════════
-# API — SALES TREND
-# ════════════════════════════════════════════════
+# ============================================================
+# APPLY FILTERS
+# ============================================================
 
-@app.route('/api/sales-trend')
-def api_sales_trend():
+def filtered_query(filters):
+    """
+    Creates a SQLAlchemy query with dashboard filters.
+    """
+
+    query = Sales.query
+
+    if filters["year"]:
+        query = query.filter(
+            db.extract(
+                "year",
+                Sales.order_date
+            ) == filters["year"]
+        )
+
+    if filters["month"]:
+        query = query.filter(
+            db.extract(
+                "month",
+                Sales.order_date
+            ) == filters["month"]
+        )
+
+    if filters["region"]:
+        query = query.filter(
+            Sales.region == filters["region"]
+        )
+
+    if filters["category"]:
+        query = query.filter(
+            Sales.category == filters["category"]
+        )
+
+    if filters["product"]:
+        query = query.filter(
+            Sales.product == filters["product"]
+        )
+
+    return query
+
+
+# ============================================================
+# SERIALISATION HELPER
+# ============================================================
+
+def clean_json_value(value):
+    """
+    Converts NumPy/Pandas values into JSON-safe values.
+    """
+
+    if pd.isna(value):
+        return None
+
+    if isinstance(
+        value,
+        (
+            np.integer,
+            np.int64,
+            np.int32
+        )
+    ):
+        return int(value)
+
+    if isinstance(
+        value,
+        (
+            np.floating,
+            np.float64,
+            np.float32
+        )
+    ):
+        return float(value)
+
+    return value
+
+
+# ============================================================
+# FRONTEND
+# ============================================================
+
+@app.route("/")
+def index():
+    return app.send_static_file(
+        "index.html"
+    )
+
+
+# ============================================================
+# API: FILTERS
+# ============================================================
+
+@app.route(
+    "/api/filters",
+    methods=["GET"]
+)
+def filters_api():
+
     try:
-        year, region, category = parse_filters()
-        where, params = build_where(year, region, category)
 
-        df = query_df(f"""
-            SELECT period,
-                   SUM(sales)  AS revenue,
-                   SUM(profit) AS profit
-            FROM orders {where}
-            GROUP BY period
-            ORDER BY period
-        """, params)
+        years = [
+            row[0]
+            for row in db.session.query(
+                db.extract(
+                    "year",
+                    Sales.order_date
+                )
+            )
+            .distinct()
+            .order_by(
+                db.extract(
+                    "year",
+                    Sales.order_date
+                )
+            )
+            .all()
+        ]
 
-        if df.empty:
-            return jsonify({'labels': [], 'revenue': [], 'profit': [], 'best_worst': []})
+        months = [
+            row[0]
+            for row in db.session.query(
+                db.extract(
+                    "month",
+                    Sales.order_date
+                )
+            )
+            .distinct()
+            .order_by(
+                db.extract(
+                    "month",
+                    Sales.order_date
+                )
+            )
+            .all()
+        ]
 
-        df['margin'] = df['profit'] / df['revenue'].replace(0, np.nan)
+        regions = [
+            row[0]
+            for row in db.session.query(
+                Sales.region
+            )
+            .distinct()
+            .order_by(
+                Sales.region
+            )
+            .all()
+        ]
 
-        # Best 3 + worst 3 months
-        top3  = df.nlargest(3, 'revenue')
-        bot3  = df.nsmallest(3, 'revenue')
-        bw = pd.concat([top3, bot3]).drop_duplicates().to_dict('records')
+        categories = [
+            row[0]
+            for row in db.session.query(
+                Sales.category
+            )
+            .distinct()
+            .order_by(
+                Sales.category
+            )
+            .all()
+        ]
 
-        return jsonify({
-            'labels':  df['period'].tolist(),
-            'revenue': [safe_float(v) for v in df['revenue']],
-            'profit':  [safe_float(v) for v in df['profit']],
-            'best_worst': [
-                {
-                    'period':  r['period'],
-                    'revenue': safe_float(r['revenue']),
-                    'profit':  safe_float(r['profit']),
-                    'margin':  safe_float(r['margin']),
-                } for r in bw
-            ],
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        products = [
+            row[0]
+            for row in db.session.query(
+                Sales.product
+            )
+            .distinct()
+            .order_by(
+                Sales.product
+            )
+            .all()
+        ]
 
+        return jsonify(
+            {
+                "success": True,
 
-# ════════════════════════════════════════════════
-# API — CATEGORY PERFORMANCE
-# ════════════════════════════════════════════════
+                "filters": {
+                    "years": [
+                        int(year)
+                        for year in years
+                    ],
 
-@app.route('/api/category-performance')
-def api_category_performance():
-    try:
-        year, region, category = parse_filters()
-        where, params = build_where(year, region, category)
+                    "months": [
+                        int(month)
+                        for month in months
+                    ],
 
-        df = query_df(f"""
-            SELECT category,
-                   SUM(sales)    AS revenue,
-                   SUM(profit)   AS profit,
-                   SUM(quantity) AS quantity,
-                   COUNT(DISTINCT COALESCE(order_id, rowid)) AS orders
-            FROM orders {where}
-            GROUP BY category
-            ORDER BY revenue DESC
-        """, params)
-
-        if df.empty:
-            return jsonify({'categories': [], 'revenue': [], 'profit': [], 'quantity': [], 'orders': []})
-
-        return jsonify({
-            'categories': df['category'].tolist(),
-            'revenue':    [safe_float(v) for v in df['revenue']],
-            'profit':     [safe_float(v) for v in df['profit']],
-            'quantity':   [safe_int(v)   for v in df['quantity']],
-            'orders':     [safe_int(v)   for v in df['orders']],
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# ════════════════════════════════════════════════
-# API — PRODUCT PERFORMANCE
-# ════════════════════════════════════════════════
-
-@app.route('/api/product-performance')
-def api_product_performance():
-    try:
-        year, region, category = parse_filters()
-        where, params = build_where(year, region, category)
-
-        df = query_df(f"""
-            SELECT product_name AS product,
-                   SUM(sales)    AS revenue,
-                   SUM(profit)   AS profit,
-                   SUM(quantity) AS quantity
-            FROM orders {where}
-            GROUP BY product_name
-        """, params)
-
-        if df.empty:
-            return jsonify({'top_revenue': [], 'top_profit': [], 'bottom': []})
-
-        df['margin'] = df['profit'] / df['revenue'].replace(0, np.nan)
-
-        def to_records(frame):
-            return [
-                {
-                    'product':  r['product'],
-                    'revenue':  safe_float(r['revenue']),
-                    'profit':   safe_float(r['profit']),
-                    'quantity': safe_int(r['quantity']),
-                    'margin':   safe_float(r['margin']),
+                    "regions": regions,
+                    "categories": categories,
+                    "products": products
                 }
-                for _, r in frame.iterrows()
+            }
+        )
+
+    except Exception as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 500
+
+
+# ============================================================
+# API: EXECUTIVE OVERVIEW
+# ============================================================
+
+@app.route(
+    "/api/overview",
+    methods=["GET"]
+)
+def overview_api():
+
+    try:
+
+        filters = get_filters()
+
+        query = filtered_query(
+            filters
+        )
+
+        rows = query.all()
+
+        if not rows:
+
+            return jsonify(
+                {
+                    "success": True,
+
+                    "overview": {
+                        "total_revenue": 0,
+                        "total_profit": 0,
+                        "total_orders": 0,
+                        "total_quantity": 0,
+                        "average_order_value": 0,
+                        "profit_margin": 0,
+                        "revenue_growth": 0
+                    }
+                }
+            )
+
+        total_revenue = sum(
+            row.revenue
+            for row in rows
+        )
+
+        total_profit = sum(
+            row.profit
+            for row in rows
+        )
+
+        total_quantity = sum(
+            row.quantity
+            for row in rows
+        )
+
+        total_orders = len(
+            set(
+                row.order_id
+                for row in rows
+            )
+        )
+
+        average_order_value = (
+            total_revenue / total_orders
+            if total_orders
+            else 0
+        )
+
+        profit_margin = (
+            total_profit / total_revenue * 100
+            if total_revenue
+            else 0
+        )
+
+        # Revenue growth based on monthly revenue.
+        monthly = {}
+
+        for row in rows:
+
+            key = (
+                row.order_date.year,
+                row.order_date.month
+            )
+
+            monthly[key] = (
+                monthly.get(key, 0)
+                + row.revenue
+            )
+
+        ordered_months = sorted(
+            monthly.keys()
+        )
+
+        revenue_growth = 0
+
+        if len(ordered_months) >= 2:
+
+            previous = monthly[
+                ordered_months[-2]
             ]
 
-        top_rev    = df.nlargest(15, 'revenue')
-        top_profit = df.nlargest(15, 'profit')
-        bottom     = df.nsmallest(15, 'revenue')
+            current = monthly[
+                ordered_months[-1]
+            ]
 
-        return jsonify({
-            'top_revenue': to_records(top_rev),
-            'top_profit':  to_records(top_profit),
-            'bottom':      to_records(bottom),
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            if previous:
+                revenue_growth = (
+                    (current - previous)
+                    / previous
+                    * 100
+                )
+
+        return jsonify(
+            {
+                "success": True,
+
+                "overview": {
+                    "total_revenue": round(
+                        total_revenue,
+                        2
+                    ),
+
+                    "total_profit": round(
+                        total_profit,
+                        2
+                    ),
+
+                    "total_orders":
+                        total_orders,
+
+                    "total_quantity":
+                        total_quantity,
+
+                    "average_order_value":
+                        round(
+                            average_order_value,
+                            2
+                        ),
+
+                    "profit_margin":
+                        round(
+                            profit_margin,
+                            2
+                        ),
+
+                    "revenue_growth":
+                        round(
+                            revenue_growth,
+                            2
+                        )
+                }
+            }
+        )
+
+    except ValueError as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 400
+
+    except Exception as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 500
 
 
-# ════════════════════════════════════════════════
-# API — REGION PERFORMANCE
-# ════════════════════════════════════════════════
+# ============================================================
+# API: SALES TREND
+# ============================================================
 
-@app.route('/api/region-performance')
-def api_region_performance():
+@app.route(
+    "/api/sales-trend",
+    methods=["GET"]
+)
+def sales_trend_api():
+
     try:
-        year, region, category = parse_filters()
-        where, params = build_where(year, region, category)
 
-        df = query_df(f"""
-            SELECT region,
-                   SUM(sales)    AS revenue,
-                   SUM(profit)   AS profit,
-                   SUM(quantity) AS quantity,
-                   COUNT(DISTINCT COALESCE(order_id, rowid)) AS orders
-            FROM orders {where}
-            GROUP BY region
-            ORDER BY revenue DESC
-        """, params)
+        filters = get_filters()
 
-        if df.empty:
-            return jsonify({'regions': [], 'revenue': [], 'profit': [], 'quantity': [], 'orders': [], 'margin': []})
+        rows = filtered_query(
+            filters
+        ).all()
 
-        df['margin'] = df['profit'] / df['revenue'].replace(0, np.nan)
+        monthly = {}
 
-        return jsonify({
-            'regions':  df['region'].tolist(),
-            'revenue':  [safe_float(v) for v in df['revenue']],
-            'profit':   [safe_float(v) for v in df['profit']],
-            'quantity': [safe_int(v)   for v in df['quantity']],
-            'orders':   [safe_int(v)   for v in df['orders']],
-            'margin':   [safe_float(v) for v in df['margin']],
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        for row in rows:
+
+            key = row.order_date.strftime(
+                "%Y-%m"
+            )
+
+            if key not in monthly:
+
+                monthly[key] = {
+                    "revenue": 0,
+                    "profit": 0
+                }
+
+            monthly[key]["revenue"] += (
+                row.revenue
+            )
+
+            monthly[key]["profit"] += (
+                row.profit
+            )
+
+        data = []
+
+        for period in sorted(
+            monthly.keys()
+        ):
+
+            data.append(
+                {
+                    "period": period,
+                    "month": period,
+
+                    "year":
+                        int(period[:4]),
+
+                    "revenue":
+                        round(
+                            monthly[period][
+                                "revenue"
+                            ],
+                            2
+                        ),
+
+                    "profit":
+                        round(
+                            monthly[period][
+                                "profit"
+                            ],
+                            2
+                        )
+                }
+            )
+
+        return jsonify(
+            {
+                "success": True,
+                "data": data
+            }
+        )
+
+    except ValueError as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 400
+
+    except Exception as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 500
 
 
-# ════════════════════════════════════════════════
-# API — INSIGHTS
-# ════════════════════════════════════════════════
+# ============================================================
+# API: CATEGORY PERFORMANCE
+# ============================================================
 
-@app.route('/api/insights')
-def api_insights():
+@app.route(
+    "/api/category-performance",
+    methods=["GET"]
+)
+def category_performance_api():
+
     try:
-        year, region, category = parse_filters()
-        where, params = build_where(year, region, category)
+
+        filters = get_filters()
+
+        rows = filtered_query(
+            filters
+        ).all()
+
+        grouped = {}
+
+        for row in rows:
+
+            category = row.category
+
+            if category not in grouped:
+
+                grouped[category] = {
+                    "revenue": 0,
+                    "profit": 0,
+                    "quantity": 0,
+                    "orders": set()
+                }
+
+            grouped[category]["revenue"] += (
+                row.revenue
+            )
+
+            grouped[category]["profit"] += (
+                row.profit
+            )
+
+            grouped[category]["quantity"] += (
+                row.quantity
+            )
+
+            grouped[category]["orders"].add(
+                row.order_id
+            )
+
+        data = []
+
+        for category, values in grouped.items():
+
+            data.append(
+                {
+                    "category": category,
+
+                    "revenue":
+                        round(
+                            values["revenue"],
+                            2
+                        ),
+
+                    "profit":
+                        round(
+                            values["profit"],
+                            2
+                        ),
+
+                    "quantity":
+                        values["quantity"],
+
+                    "orders":
+                        len(values["orders"])
+                }
+            )
+
+        data.sort(
+            key=lambda item:
+                item["revenue"],
+            reverse=True
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "data": data
+            }
+        )
+
+    except ValueError as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 400
+
+    except Exception as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 500
+
+
+# ============================================================
+# API: PRODUCT PERFORMANCE
+# ============================================================
+
+@app.route(
+    "/api/product-performance",
+    methods=["GET"]
+)
+def product_performance_api():
+
+    try:
+
+        filters = get_filters()
+
+        rows = filtered_query(
+            filters
+        ).all()
+
+        grouped = {}
+
+        for row in rows:
+
+            product = row.product
+
+            if product not in grouped:
+
+                grouped[product] = {
+                    "revenue": 0,
+                    "profit": 0,
+                    "quantity": 0,
+                    "orders": set(),
+                    "category": row.category
+                }
+
+            grouped[product]["revenue"] += (
+                row.revenue
+            )
+
+            grouped[product]["profit"] += (
+                row.profit
+            )
+
+            grouped[product]["quantity"] += (
+                row.quantity
+            )
+
+            grouped[product]["orders"].add(
+                row.order_id
+            )
+
+        data = []
+
+        for product, values in grouped.items():
+
+            data.append(
+                {
+                    "product": product,
+
+                    "category":
+                        values["category"],
+
+                    "revenue":
+                        round(
+                            values["revenue"],
+                            2
+                        ),
+
+                    "profit":
+                        round(
+                            values["profit"],
+                            2
+                        ),
+
+                    "quantity":
+                        values["quantity"],
+
+                    "orders":
+                        len(values["orders"])
+                }
+            )
+
+        data.sort(
+            key=lambda item:
+                item["revenue"],
+            reverse=True
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "data": data
+            }
+        )
+
+    except ValueError as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 400
+
+    except Exception as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 500
+
+
+# ============================================================
+# API: REGION PERFORMANCE
+# ============================================================
+
+@app.route(
+    "/api/region-performance",
+    methods=["GET"]
+)
+def region_performance_api():
+
+    try:
+
+        filters = get_filters()
+
+        rows = filtered_query(
+            filters
+        ).all()
+
+        grouped = {}
+
+        for row in rows:
+
+            region = row.region
+
+            if region not in grouped:
+
+                grouped[region] = {
+                    "revenue": 0,
+                    "profit": 0,
+                    "quantity": 0,
+                    "orders": set()
+                }
+
+            grouped[region]["revenue"] += (
+                row.revenue
+            )
+
+            grouped[region]["profit"] += (
+                row.profit
+            )
+
+            grouped[region]["quantity"] += (
+                row.quantity
+            )
+
+            grouped[region]["orders"].add(
+                row.order_id
+            )
+
+        data = []
+
+        for region, values in grouped.items():
+
+            data.append(
+                {
+                    "region": region,
+
+                    "revenue":
+                        round(
+                            values["revenue"],
+                            2
+                        ),
+
+                    "profit":
+                        round(
+                            values["profit"],
+                            2
+                        ),
+
+                    "quantity":
+                        values["quantity"],
+
+                    "orders":
+                        len(values["orders"])
+                }
+            )
+
+        data.sort(
+            key=lambda item:
+                item["revenue"],
+            reverse=True
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "data": data
+            }
+        )
+
+    except ValueError as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 400
+
+    except Exception as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 500
+
+
+# ============================================================
+# API: BUSINESS INSIGHTS
+# ============================================================
+
+@app.route(
+    "/api/insights",
+    methods=["GET"]
+)
+def insights_api():
+
+    try:
+
+        filters = get_filters()
+
+        rows = filtered_query(
+            filters
+        ).all()
+
+        if not rows:
+
+            return jsonify(
+                {
+                    "success": True,
+                    "insights": []
+                }
+            )
+
+        category_data = {}
+        region_data = {}
+        product_data = {}
+        monthly_data = {}
+
+        for row in rows:
+
+            category = row.category
+
+            if category not in category_data:
+
+                category_data[category] = {
+                    "revenue": 0,
+                    "profit": 0
+                }
+
+            category_data[
+                category
+            ]["revenue"] += row.revenue
+
+            category_data[
+                category
+            ]["profit"] += row.profit
+
+
+            region = row.region
+
+            if region not in region_data:
+
+                region_data[region] = {
+                    "revenue": 0,
+                    "profit": 0
+                }
+
+            region_data[
+                region
+            ]["revenue"] += row.revenue
+
+            region_data[
+                region
+            ]["profit"] += row.profit
+
+
+            product = row.product
+
+            if product not in product_data:
+
+                product_data[product] = {
+                    "revenue": 0,
+                    "profit": 0
+                }
+
+            product_data[
+                product
+            ]["revenue"] += row.revenue
+
+            product_data[
+                product
+            ]["profit"] += row.profit
+
+
+            month = row.order_date.strftime(
+                "%Y-%m"
+            )
+
+            monthly_data[month] = (
+                monthly_data.get(
+                    month,
+                    0
+                )
+                + row.revenue
+            )
+
         insights = []
 
-        # 1. Strongest category
-        cat_df = query_df(f"""
-            SELECT category, SUM(sales) AS rev, SUM(profit) AS profit
-            FROM orders {where}
-            GROUP BY category ORDER BY rev DESC LIMIT 1
-        """, params)
-        if not cat_df.empty:
-            r = cat_df.iloc[0]
-            insights.append({
-                'type': 'positive', 'tag': 'Top Category',
-                'title': f"{r['category']} leads revenue",
-                'detail': 'Strongest category by total sales across all regions and periods.',
-                'value': f"${r['rev']:,.0f}",
-            })
 
-        # 2. Weakest category
-        weak_df = query_df(f"""
-            SELECT category, SUM(sales) AS rev FROM orders {where}
-            GROUP BY category ORDER BY rev ASC LIMIT 1
-        """, params)
-        if not weak_df.empty:
-            r = weak_df.iloc[0]
-            insights.append({
-                'type': 'negative', 'tag': 'Weak Category',
-                'title': f"{r['category']} underperforms",
-                'detail': 'Lowest revenue contribution — consider promotions or inventory review.',
-                'value': f"${r['rev']:,.0f}",
-            })
+        # ----------------------------------------------------
+        # STRONGEST CATEGORY
+        # ----------------------------------------------------
 
-        # 3. Best region
-        reg_df = query_df(f"""
-            SELECT region, SUM(sales) AS rev, SUM(profit) AS profit
-            FROM orders {where}
-            GROUP BY region ORDER BY rev DESC LIMIT 1
-        """, params)
-        if not reg_df.empty:
-            r = reg_df.iloc[0]
-            insights.append({
-                'type': 'positive', 'tag': 'Best Region',
-                'title': f"{r['region']} region is strongest",
-                'detail': 'Highest revenue region — opportunity to replicate success elsewhere.',
-                'value': f"${r['rev']:,.0f}",
-            })
+        strongest_category = max(
+            category_data,
+            key=lambda category:
+                category_data[
+                    category
+                ]["revenue"]
+        )
 
-        # 4. Highest-profit product
-        prod_df = query_df(f"""
-            SELECT product_name, SUM(profit) AS profit
-            FROM orders {where}
-            GROUP BY product_name ORDER BY profit DESC LIMIT 1
-        """, params)
-        if not prod_df.empty:
-            r = prod_df.iloc[0]
-            insights.append({
-                'type': 'positive', 'tag': 'Top Product',
-                'title': 'Highest-profit product',
-                'detail': r['product_name'][:60],
-                'value': f"${r['profit']:,.0f} profit",
-            })
+        strongest_category_revenue = (
+            category_data[
+                strongest_category
+            ]["revenue"]
+        )
 
-        # 5. High-sales, low-margin category (discount pressure)
-        margin_df = query_df(f"""
-            SELECT category,
-                   SUM(sales) AS rev,
-                   SUM(profit) / NULLIF(SUM(sales), 0) AS margin
-            FROM orders {where}
-            GROUP BY category
-            HAVING rev > 0
-            ORDER BY margin ASC LIMIT 1
-        """, params)
-        if not margin_df.empty:
-            r = margin_df.iloc[0]
-            margin_pct = (r['margin'] or 0) * 100
-            insights.append({
-                'type': 'amber', 'tag': 'Margin Alert',
-                'title': f"{r['category']} has thin margins",
-                'detail': 'High sales but low profit — likely excess discounting or high cost of goods.',
-                'value': f"{margin_pct:.1f}% margin",
-            })
-
-        # 6. Largest monthly revenue growth
-        trend_df = query_df(f"""
-            SELECT period, SUM(sales) AS rev
-            FROM orders {where}
-            GROUP BY period ORDER BY period
-        """, params)
-        if len(trend_df) >= 2:
-            trend_df['growth'] = trend_df['rev'].pct_change()
-            best_g = trend_df.dropna().nlargest(1, 'growth').iloc[0]
-            insights.append({
-                'type': 'neutral', 'tag': 'Peak Growth',
-                'title': f"Biggest monthly jump: {best_g['period']}",
-                'detail': 'Largest month-over-month revenue increase in the dataset.',
-                'value': f"+{best_g['growth'] * 100:.1f}%",
-            })
-
-        return jsonify({'insights': insights})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# ════════════════════════════════════════════════
-# API — FORECAST  (linear regression via NumPy)
-# ════════════════════════════════════════════════
-
-@app.route('/api/forecast')
-def api_forecast():
-    try:
-        # Always forecast on full dataset (no filters — more data = better model)
-        df = query_df("""
-            SELECT period, SUM(sales) AS revenue
-            FROM orders
-            GROUP BY period
-            ORDER BY period
-        """)
-
-        if len(df) < 6:
-            return jsonify({'error': 'Not enough data to forecast (need ≥ 6 months).'}), 422
-
-        # Numeric index for regression
-        df = df.reset_index(drop=True)
-        X = df.index.values.astype(float)
-        y = df['revenue'].values.astype(float)
-
-        # Linear regression with NumPy (no sklearn required)
-        coeffs = np.polyfit(X, y, 1)          # slope, intercept
-        poly   = np.poly1d(coeffs)
-
-        y_hat  = poly(X)
-        ss_res = np.sum((y - y_hat) ** 2)
-        ss_tot = np.sum((y - y.mean()) ** 2)
-        r2     = 1 - ss_res / ss_tot if ss_tot else 0
-        rmse   = math.sqrt(ss_res / len(y))
-
-        # 95% prediction interval (simplified)
-        n  = len(X)
-        se = math.sqrt(ss_res / max(n - 2, 1))
-        t_val = 2.0  # approx t_{0.025} for large n
-
-        # Generate forecast periods
-        last_period = pd.Period(df['period'].iloc[-1], freq='M')
-        n_fc = 6
-        fc_periods = [str(last_period + i) for i in range(1, n_fc + 1)]
-        fc_X       = np.arange(n, n + n_fc, dtype=float)
-        fc_y       = poly(fc_X)
-
-        # CI width grows with distance from last known point
-        x_mean = X.mean()
-        ci = [
-            t_val * se * math.sqrt(1 + 1/n + (xi - x_mean)**2 / max(np.sum((X - x_mean)**2), 1))
-            for xi in fc_X
-        ]
-
-        historical = [
-            {'period': row['period'], 'revenue': safe_float(row['revenue'])}
-            for _, row in df.iterrows()
-        ]
-        forecast = [
+        insights.append(
             {
-                'period':    fc_periods[i],
-                'predicted': safe_float(fc_y[i]),
-                'lower':     safe_float(max(fc_y[i] - ci[i], 0)),
-                'upper':     safe_float(fc_y[i] + ci[i]),
+                "type": "Strongest Category",
+                "icon": "↑",
+
+                "title":
+                    strongest_category,
+
+                "description":
+                    (
+                        f"{strongest_category} generated "
+                        f"{format_currency_text(strongest_category_revenue)} "
+                        "in revenue and is currently the "
+                        "strongest category."
+                    )
             }
-            for i in range(n_fc)
-        ]
-
-        return jsonify({
-            'model':      'Linear Trend (OLS)',
-            'periods':    n_fc,
-            'r2':         round(r2, 4),
-            'rmse':       safe_float(rmse),
-            'historical': historical,
-            'forecast':   forecast,
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        )
 
 
-# ════════════════════════════════════════════════
-# MAIN
-# ════════════════════════════════════════════════
+        # ----------------------------------------------------
+        # WEAKEST CATEGORY
+        # ----------------------------------------------------
 
-if __name__ == '__main__':
-    init_db()
-    print("Starting BI Command Centre on http://127.0.0.1:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+        weakest_category = min(
+            category_data,
+            key=lambda category:
+                category_data[
+                    category
+                ]["revenue"]
+        )
+
+        weakest_category_revenue = (
+            category_data[
+                weakest_category
+            ]["revenue"]
+        )
+
+        insights.append(
+            {
+                "type": "Weakest Category",
+                "icon": "↓",
+
+                "title":
+                    weakest_category,
+
+                "description":
+                    (
+                        f"{weakest_category} generated "
+                        f"{format_currency_text(weakest_category_revenue)} "
+                        "in revenue and may require additional "
+                        "commercial attention."
+                    )
+            }
+        )
+
+
+        # ----------------------------------------------------
+        # BEST REGION
+        # ----------------------------------------------------
+
+        best_region = max(
+            region_data,
+            key=lambda region:
+                region_data[
+                    region
+                ]["profit"]
+        )
+
+        best_region_profit = (
+            region_data[
+                best_region
+            ]["profit"]
+        )
+
+        insights.append(
+            {
+                "type": "Best Region",
+                "icon": "◆",
+
+                "title":
+                    best_region,
+
+                "description":
+                    (
+                        f"{best_region} generated "
+                        f"{format_currency_text(best_region_profit)} "
+                        "in profit, making it the strongest "
+                        "regional market."
+                    )
+            }
+        )
+
+
+        # ----------------------------------------------------
+        # HIGHEST PROFIT PRODUCT
+        # ----------------------------------------------------
+
+        best_product = max(
+            product_data,
+            key=lambda product:
+                product_data[
+                    product
+                ]["profit"]
+        )
+
+        best_product_profit = (
+            product_data[
+                best_product
+            ]["profit"]
+        )
+
+        insights.append(
+            {
+                "type": "Highest-Profit Product",
+                "icon": "★",
+
+                "title":
+                    best_product,
+
+                "description":
+                    (
+                        f"{best_product} generated "
+                        f"{format_currency_text(best_product_profit)} "
+                        "in profit and is the most profitable "
+                        "product in the selected dataset."
+                    )
+            }
+        )
+
+
+        # ----------------------------------------------------
+        # LARGEST MONTHLY GROWTH
+        # ----------------------------------------------------
+
+        ordered_months = sorted(
+            monthly_data.keys()
+        )
+
+        largest_growth = None
+        largest_growth_value = -np.inf
+
+        for index in range(
+            1,
+            len(ordered_months)
+        ):
+
+            previous_month = (
+                monthly_data[
+                    ordered_months[index - 1]
+                ]
+            )
+
+            current_month = (
+                monthly_data[
+                    ordered_months[index]
+                ]
+            )
+
+            if previous_month == 0:
+                continue
+
+            growth = (
+                (
+                    current_month
+                    - previous_month
+                )
+                / previous_month
+                * 100
+            )
+
+            if growth > largest_growth_value:
+
+                largest_growth_value = growth
+
+                largest_growth = (
+                    ordered_months[index]
+                )
+
+        if largest_growth:
+
+            insights.append(
+                {
+                    "type": "Largest Monthly Growth",
+                    "icon": "↗",
+
+                    "title":
+                        largest_growth,
+
+                    "description":
+                        (
+                            f"Revenue increased by "
+                            f"{largest_growth_value:.2f}% "
+                            "compared with the previous month."
+                        )
+                }
+            )
+
+
+        # ----------------------------------------------------
+        # HIGH SALES / LOW MARGIN
+        # ----------------------------------------------------
+
+        total_revenue = sum(
+            item["revenue"]
+            for item in category_data.values()
+        )
+
+        high_sales_low_margin = []
+
+        for category, values in category_data.items():
+
+            revenue = values["revenue"]
+            profit = values["profit"]
+
+            margin = (
+                profit / revenue * 100
+                if revenue
+                else 0
+            )
+
+            if (
+                revenue >= total_revenue * 0.15
+                and margin < 15
+            ):
+
+                high_sales_low_margin.append(
+                    (
+                        category,
+                        revenue,
+                        margin
+                    )
+                )
+
+        for (
+            category,
+            revenue,
+            margin
+        ) in high_sales_low_margin:
+
+            insights.append(
+                {
+                    "type":
+                        "Margin Opportunity",
+
+                    "icon":
+                        "!",
+
+                    "title":
+                        category,
+
+                    "description":
+                        (
+                            f"{category} generates "
+                            f"{format_currency_text(revenue)} "
+                            f"in revenue but has only a "
+                            f"{margin:.2f}% profit margin. "
+                            "Pricing, sourcing or discount "
+                            "strategy should be reviewed."
+                        )
+                }
+            )
+
+        return jsonify(
+            {
+                "success": True,
+                "insights": insights
+            }
+        )
+
+    except ValueError as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 400
+
+    except Exception as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 500
+
+
+def format_currency_text(value):
+    """
+    Currency formatter used inside insight messages.
+    """
+
+    value = float(value)
+
+    if value >= 10_000_000:
+        return f"₹{value / 10_000_000:.2f} Cr"
+
+    if value >= 100_000:
+        return f"₹{value / 100_000:.2f} L"
+
+    if value >= 1_000:
+        return f"₹{value / 1_000:.2f} K"
+
+    return f"₹{value:,.0f}"
+
+
+# ============================================================
+# API: FORECAST
+# ============================================================
+
+@app.route(
+    "/api/forecast",
+    methods=["GET"]
+)
+def forecast_api():
+
+    try:
+
+        filters = get_filters()
+
+        periods = request.args.get(
+            "periods",
+            "6"
+        )
+
+        try:
+
+            periods = int(periods)
+
+            if periods < 1 or periods > 24:
+
+                raise ValueError
+
+        except ValueError:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "error":
+                        "Forecast periods must be between 1 and 24."
+                }
+            ), 400
+
+        rows = filtered_query(
+            filters
+        ).all()
+
+        monthly = {}
+
+        for row in rows:
+
+            period = row.order_date.strftime(
+                "%Y-%m"
+            )
+
+            monthly[period] = (
+                monthly.get(
+                    period,
+                    0
+                )
+                + row.revenue
+            )
+
+        if len(monthly) < 3:
+
+            return jsonify(
+                {
+                    "success": True,
+
+                    "historical": [],
+
+                    "forecast": [],
+
+                    "model":
+                        "Linear Regression",
+
+                    "confidence":
+                        "Insufficient data",
+
+                    "description":
+                        (
+                            "At least three historical "
+                            "periods are required for forecasting."
+                        )
+                }
+            )
+
+        ordered_periods = sorted(
+            monthly.keys()
+        )
+
+        historical_values = np.array(
+            [
+                monthly[period]
+                for period in ordered_periods
+            ],
+            dtype=float
+        )
+
+        X = np.arange(
+            len(historical_values)
+        ).reshape(-1, 1)
+
+        y = historical_values
+
+        model = LinearRegression()
+
+        model.fit(
+            X,
+            y
+        )
+
+        future_X = np.arange(
+            len(y),
+            len(y) + periods
+        ).reshape(-1, 1)
+
+        predictions = model.predict(
+            future_X
+        )
+
+        predictions = np.maximum(
+            predictions,
+            0
+        )
+
+        # Calculate a simple uncertainty estimate
+        # using historical residual standard deviation.
+        fitted_values = model.predict(X)
+
+        residuals = (
+            y - fitted_values
+        )
+
+        residual_std = (
+            np.std(residuals)
+            if len(residuals) > 1
+            else 0
+        )
+
+        confidence_level = 95
+
+        historical = []
+
+        for period in ordered_periods:
+
+            historical.append(
+                {
+                    "period": period,
+                    "revenue":
+                        round(
+                            monthly[period],
+                            2
+                        )
+                }
+            )
+
+        last_date = pd.Period(
+            ordered_periods[-1],
+            freq="M"
+        )
+
+        forecast = []
+
+        for index, prediction in enumerate(
+            predictions,
+            start=1
+        ):
+
+            future_period = (
+                last_date + index
+            )
+
+            forecast.append(
+                {
+                    "period":
+                        str(future_period),
+
+                    "forecast":
+                        round(
+                            float(prediction),
+                            2
+                        ),
+
+                    "lower_bound":
+                        round(
+                            max(
+                                0,
+                                float(prediction)
+                                - 1.96
+                                * residual_std
+                            ),
+                            2
+                        ),
+
+                    "upper_bound":
+                        round(
+                            float(prediction)
+                            + 1.96
+                            * residual_std,
+                            2
+                        )
+                }
+            )
+
+        return jsonify(
+            {
+                "success": True,
+
+                "historical":
+                    historical,
+
+                "forecast":
+                    forecast,
+
+                "model":
+                    "Linear Regression",
+
+                "confidence":
+                    confidence_level,
+
+                "uncertainty":
+                    round(
+                        float(residual_std),
+                        2
+                    ),
+
+                "description":
+                    (
+                        "Revenue forecast generated using "
+                        "a lightweight Linear Regression model "
+                        "trained on historical monthly revenue. "
+                        "The uncertainty estimate is based on "
+                        "historical model residuals."
+                    )
+            }
+        )
+
+    except ValueError as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 400
+
+    except Exception as error:
+
+        return jsonify(
+            {
+                "success": False,
+                "error": str(error)
+            }
+        ), 500
+
+
+# ============================================================
+# API HEALTH CHECK
+# ============================================================
+
+@app.route(
+    "/api/health",
+    methods=["GET"]
+)
+def health_api():
+
+    try:
+
+        record_count = Sales.query.count()
+
+        return jsonify(
+            {
+                "success": True,
+
+                "status": "healthy",
+
+                "database":
+                    "connected",
+
+                "records":
+                    record_count,
+
+                "timestamp":
+                    datetime.utcnow().isoformat()
+            }
+        )
+
+    except Exception as error:
+
+        return jsonify(
+            {
+                "success": False,
+
+                "status": "unhealthy",
+
+                "error":
+                    str(error)
+            }
+        ), 500
+
+
+# ============================================================
+# GLOBAL ERROR HANDLER
+# ============================================================
+
+@app.errorhandler(404)
+def not_found(error):
+
+    return jsonify(
+        {
+            "success": False,
+            "error": "Endpoint not found."
+        }
+    ), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+
+    return jsonify(
+        {
+            "success": False,
+            "error": "Internal server error."
+        }
+    ), 500
+
+
+# ============================================================
+# START APPLICATION
+# ============================================================
+
+if __name__ == "__main__":
+
+    print()
+    print("=" * 60)
+    print(" BUSINESS INTELLIGENCE COMMAND CENTRE")
+    print("=" * 60)
+
+    print()
+    print("Preparing dataset...")
+
+    create_dataset()
+
+    print(
+        f"Dataset: {CSV_FILE}"
+    )
+
+    print()
+    print("Initialising SQLite database...")
+
+    initialise_database()
+
+    print(
+        f"Database: {DATABASE_FILE}"
+    )
+
+    print()
+    print("API endpoints:")
+    print("  GET /api/health")
+    print("  GET /api/filters")
+    print("  GET /api/overview")
+    print("  GET /api/sales-trend")
+    print("  GET /api/category-performance")
+    print("  GET /api/product-performance")
+    print("  GET /api/region-performance")
+    print("  GET /api/insights")
+    print("  GET /api/forecast")
+
+    print()
+    print("Dashboard:")
+    print("  http://127.0.0.1:5000")
+
+    print()
+    print("=" * 60)
+    print()
+
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )
