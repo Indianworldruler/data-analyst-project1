@@ -1,1418 +1,1872 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Business Intelligence Command Centre</title>
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-
-<body>
-
-    <!-- =========================================================
-         APPLICATION LOADER
-    ========================================================== -->
-    <div id="app-loader" class="app-loader">
-        <div class="loader-spinner"></div>
-        <p>Loading Business Intelligence Command Centre...</p>
-    </div>
-
-
-    <!-- =========================================================
-         APPLICATION
-    ========================================================== -->
-    <div id="app" class="app-container">
-
-        <!-- =====================================================
-             SIDEBAR
-        ====================================================== -->
-        <aside class="sidebar" id="sidebar">
-
-            <div class="sidebar-brand">
-                <div class="brand-icon">
-                    BI
-                </div>
-
-                <div class="brand-text">
-                    <h1>BI Command</h1>
-                    <span>Business Intelligence</span>
-                </div>
-            </div>
-
-
-            <nav class="sidebar-navigation">
-
-                <p class="navigation-label">MAIN</p>
-
-                <a href="#overview"
-                   class="navigation-item active"
-                   data-section="overview">
-                    <span class="navigation-icon">⌂</span>
-                    <span>Executive Overview</span>
-                </a>
-
-                <a href="#sales"
-                   class="navigation-item"
-                   data-section="sales">
-                    <span class="navigation-icon">↗</span>
-                    <span>Sales Analysis</span>
-                </a>
-
-                <a href="#products"
-                   class="navigation-item"
-                   data-section="products">
-                    <span class="navigation-icon">▦</span>
-                    <span>Products</span>
-                </a>
-
-                <a href="#categories"
-                   class="navigation-item"
-                   data-section="categories">
-                    <span class="navigation-icon">◈</span>
-                    <span>Categories</span>
-                </a>
-
-                <a href="#regions"
-                   class="navigation-item"
-                   data-section="regions">
-                    <span class="navigation-icon">◎</span>
-                    <span>Regions</span>
-                </a>
-
-                <a href="#insights"
-                   class="navigation-item"
-                   data-section="insights">
-                    <span class="navigation-icon">✦</span>
-                    <span>Business Insights</span>
-                </a>
-
-                <a href="#forecast"
-                   class="navigation-item"
-                   data-section="forecast">
-                    <span class="navigation-icon">⌁</span>
-                    <span>Forecasting</span>
-                </a>
-
-            </nav>
+:root {
+    --bg-primary: #f4f6f8;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f8fafb;
+
+    --sidebar-bg: #111827;
+    --sidebar-hover: #1f2937;
+    --sidebar-active: #263449;
+
+    --text-primary: #172033;
+    --text-secondary: #667085;
+    --text-muted: #98a2b3;
+
+    --border: #e4e7ec;
+    --border-light: #eef1f4;
+
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --accent-soft: #eff6ff;
+
+    --success: #16803c;
+    --success-soft: #ecfdf3;
+
+    --danger: #c43232;
+    --danger-soft: #fef3f2;
+
+    --warning: #b54708;
+    --warning-soft: #fffaeb;
+
+    --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06);
+    --shadow-md: 0 4px 14px rgba(16, 24, 40, 0.07);
+    --shadow-lg: 0 12px 30px rgba(16, 24, 40, 0.08);
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+
+    --sidebar-width: 250px;
+    --header-height: 82px;
+
+    --transition: 180ms ease;
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+canvas {
+    max-width: 100%;
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
 
 
-            <div class="sidebar-footer">
+/* =========================================================
+   APP LOADER
+========================================================= */
 
-                <div class="system-status">
-                    <span class="status-dot"></span>
+.app-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
 
-                    <div>
-                        <strong>System Online</strong>
-                        <small>Data API connected</small>
-                    </div>
-                </div>
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 
-            </div>
+    background: var(--bg-primary);
+    color: var(--text-primary);
 
-        </aside>
+    transition:
+        opacity 300ms ease,
+        visibility 300ms ease;
+}
 
+.app-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
 
-        <!-- =====================================================
-             MAIN CONTENT
-        ====================================================== -->
-        <main class="main-content">
+.loader-spinner {
+    width: 38px;
+    height: 38px;
 
-            <!-- =================================================
-                 TOP HEADER
-            ================================================== -->
-            <header class="dashboard-header">
+    margin-bottom: 16px;
 
-                <div class="header-left">
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
 
-                    <button
-                        type="button"
-                        id="sidebar-toggle"
-                        class="sidebar-toggle"
-                        aria-label="Toggle navigation">
-                        ☰
-                    </button>
+    animation: spin 0.8s linear infinite;
+}
 
-                    <div>
-                        <p class="header-eyebrow">
-                            BUSINESS INTELLIGENCE
-                        </p>
+.app-loader p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
 
-                        <h2>
-                            Command Centre
-                        </h2>
-                    </div>
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
 
-                </div>
 
+/* =========================================================
+   APPLICATION LAYOUT
+========================================================= */
 
-                <div class="header-right">
+.app-container {
+    min-height: 100vh;
+}
 
-                    <div class="last-updated">
-                        <span>Last updated</span>
-                        <strong id="last-updated">
-                            Loading...
-                        </strong>
-                    </div>
+.main-content {
+    min-width: 0;
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+}
 
-                    <button
-                        type="button"
-                        id="refresh-dashboard"
-                        class="refresh-button">
-                        ↻
-                        <span>Refresh</span>
-                    </button>
 
-                </div>
+/* =========================================================
+   SIDEBAR
+========================================================= */
 
-            </header>
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
 
+    z-index: 1000;
 
-            <!-- =================================================
-                 FILTER PANEL
-            ================================================== -->
-            <section class="filter-panel">
+    width: var(--sidebar-width);
 
-                <div class="filter-heading">
+    display: flex;
+    flex-direction: column;
 
-                    <div>
-                        <p class="section-eyebrow">
-                            DATA CONTROLS
-                        </p>
+    background: var(--sidebar-bg);
+    color: #ffffff;
 
-                        <h3>Analyse your business</h3>
-                    </div>
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
 
-                    <button
-                        type="button"
-                        id="reset-filters"
-                        class="reset-filter-button">
-                        Reset Filters
-                    </button>
+.sidebar-brand {
+    height: var(--header-height);
 
-                </div>
+    display: flex;
+    align-items: center;
 
+    padding: 0 22px;
 
-                <div class="filter-grid">
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
 
-                    <div class="filter-group">
+.brand-icon {
+    width: 38px;
+    height: 38px;
 
-                        <label for="year-filter">
-                            Year
-                        </label>
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-                        <select id="year-filter">
-                            <option value="">All Years</option>
-                        </select>
+    margin-right: 11px;
 
-                    </div>
+    border-radius: 9px;
 
+    background: var(--accent);
+    color: #ffffff;
 
-                    <div class="filter-group">
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
 
-                        <label for="month-filter">
-                            Month
-                        </label>
+.brand-text h1 {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
 
-                        <select id="month-filter">
-                            <option value="">All Months</option>
-                        </select>
+.brand-text span {
+    display: block;
+    margin-top: 1px;
 
-                    </div>
+    color: #98a2b3;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
 
+.sidebar-navigation {
+    flex: 1;
 
-                    <div class="filter-group">
+    padding: 25px 13px;
 
-                        <label for="region-filter">
-                            Region
-                        </label>
+    overflow-y: auto;
+}
 
-                        <select id="region-filter">
-                            <option value="">All Regions</option>
-                        </select>
+.navigation-label {
+    padding: 0 12px;
+    margin-bottom: 9px;
 
-                    </div>
+    color: #667085;
 
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
 
-                    <div class="filter-group">
+.navigation-item {
+    position: relative;
 
-                        <label for="category-filter">
-                            Category
-                        </label>
+    display: flex;
+    align-items: center;
 
-                        <select id="category-filter">
-                            <option value="">All Categories</option>
-                        </select>
+    min-height: 44px;
 
-                    </div>
+    padding: 0 12px;
+    margin-bottom: 3px;
 
+    border-radius: 7px;
 
-                    <div class="filter-group">
+    color: #aeb7c6;
 
-                        <label for="product-filter">
-                            Product
-                        </label>
+    font-size: 13px;
+    font-weight: 500;
 
-                        <select id="product-filter">
-                            <option value="">All Products</option>
-                        </select>
+    transition:
+        background var(--transition),
+        color var(--transition),
+        transform var(--transition);
+}
 
-                    </div>
+.navigation-item:hover {
+    background: var(--sidebar-hover);
+    color: #ffffff;
+}
 
-                </div>
+.navigation-item.active {
+    background: var(--sidebar-active);
+    color: #ffffff;
+}
 
-            </section>
+.navigation-item.active::before {
+    content: "";
 
+    position: absolute;
+    left: 0;
+    top: 9px;
+    bottom: 9px;
 
-            <!-- =================================================
-                 ERROR MESSAGE
-            ================================================== -->
-            <div
-                id="global-error"
-                class="error-state"
-                role="alert"
-                hidden>
+    width: 3px;
 
-                <div class="error-icon">!</div>
+    border-radius: 0 4px 4px 0;
 
-                <div>
-                    <strong>Unable to load dashboard data</strong>
-                    <p id="global-error-message">
-                        Please check the backend connection and try again.
-                    </p>
-                </div>
+    background: var(--accent);
+}
 
-                <button
-                    type="button"
-                    id="retry-dashboard">
-                    Retry
-                </button>
+.navigation-icon {
+    width: 27px;
 
-            </div>
+    margin-right: 6px;
 
+    color: currentColor;
 
-            <!-- =================================================
-                 EXECUTIVE OVERVIEW
-            ================================================== -->
-            <section
-                id="overview"
-                class="dashboard-section">
+    font-size: 16px;
+    text-align: center;
+}
 
-                <div class="section-header">
+.sidebar-footer {
+    padding: 18px 15px;
 
-                    <div>
-                        <p class="section-eyebrow">
-                            EXECUTIVE OVERVIEW
-                        </p>
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
 
-                        <h2>Business Performance</h2>
+.system-status {
+    display: flex;
+    align-items: center;
 
-                        <p>
-                            A high-level view of revenue, profitability,
-                            orders and business growth.
-                        </p>
-                    </div>
+    padding: 11px;
 
-                </div>
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
 
+    background: rgba(255, 255, 255, 0.025);
+}
 
-                <!-- KPI CARDS -->
-                <div class="kpi-grid">
+.status-dot {
+    width: 8px;
+    height: 8px;
 
-                    <article class="kpi-card">
+    margin-right: 9px;
 
-                        <div class="kpi-top">
-                            <span class="kpi-label">
-                                Total Revenue
-                            </span>
+    border-radius: 50%;
 
-                            <span class="kpi-icon">
-                                ₹
-                            </span>
-                        </div>
+    background: #22c55e;
 
-                        <div
-                            id="total-revenue"
-                            class="kpi-value">
-                            —
-                        </div>
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
+}
 
-                        <div class="kpi-footer">
-                            <span
-                                id="revenue-growth"
-                                class="kpi-change">
-                                —
-                            </span>
+.system-status strong {
+    display: block;
 
-                            <span>
-                                vs previous period
-                            </span>
-                        </div>
+    color: #e5e7eb;
+    font-size: 11px;
+    font-weight: 600;
+}
 
-                    </article>
+.system-status small {
+    display: block;
 
+    margin-top: 1px;
 
-                    <article class="kpi-card">
+    color: #667085;
+    font-size: 10px;
+}
 
-                        <div class="kpi-top">
-                            <span class="kpi-label">
-                                Total Profit
-                            </span>
 
-                            <span class="kpi-icon">
-                                +
-                            </span>
-                        </div>
+/* =========================================================
+   DASHBOARD HEADER
+========================================================= */
 
-                        <div
-                            id="total-profit"
-                            class="kpi-value">
-                            —
-                        </div>
+.dashboard-header {
+    height: var(--header-height);
 
-                        <div class="kpi-footer">
-                            <span
-                                id="profit-margin"
-                                class="kpi-change">
-                                —
-                            </span>
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-                            <span>
-                                profit margin
-                            </span>
-                        </div>
+    padding: 0 32px;
 
-                    </article>
+    background: var(--bg-secondary);
 
+    border-bottom: 1px solid var(--border);
 
-                    <article class="kpi-card">
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
 
-                        <div class="kpi-top">
-                            <span class="kpi-label">
-                                Total Orders
-                            </span>
+.header-left,
+.header-right {
+    display: flex;
+    align-items: center;
+}
 
-                            <span class="kpi-icon">
-                                #
-                            </span>
-                        </div>
+.header-left > div {
+    min-width: 0;
+}
 
-                        <div
-                            id="total-orders"
-                            class="kpi-value">
-                            —
-                        </div>
+.header-eyebrow,
+.section-eyebrow {
+    color: var(--text-muted);
 
-                        <div class="kpi-footer">
-                            <span>
-                                Completed transactions
-                            </span>
-                        </div>
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+}
 
-                    </article>
+.dashboard-header h2 {
+    margin-top: 1px;
 
+    color: var(--text-primary);
 
-                    <article class="kpi-card">
+    font-size: 20px;
+    line-height: 1.25;
+    letter-spacing: -0.4px;
+}
 
-                        <div class="kpi-top">
-                            <span class="kpi-label">
-                                Total Quantity
-                            </span>
+.sidebar-toggle {
+    display: none;
 
-                            <span class="kpi-icon">
-                                ≡
-                            </span>
-                        </div>
+    width: 38px;
+    height: 38px;
 
-                        <div
-                            id="total-quantity"
-                            class="kpi-value">
-                            —
-                        </div>
+    margin-right: 12px;
 
-                        <div class="kpi-footer">
-                            <span>
-                                Units sold
-                            </span>
-                        </div>
+    border: 1px solid var(--border);
+    border-radius: 7px;
 
-                    </article>
+    background: #ffffff;
+    color: var(--text-primary);
 
+    font-size: 17px;
+}
 
-                    <article class="kpi-card">
+.last-updated {
+    display: flex;
+    flex-direction: column;
 
-                        <div class="kpi-top">
-                            <span class="kpi-label">
-                                Average Order Value
-                            </span>
+    margin-right: 20px;
 
-                            <span class="kpi-icon">
-                                AOV
-                            </span>
-                        </div>
+    text-align: right;
+}
 
-                        <div
-                            id="average-order-value"
-                            class="kpi-value">
-                            —
-                        </div>
+.last-updated span {
+    color: var(--text-muted);
+    font-size: 10px;
+}
 
-                        <div class="kpi-footer">
-                            <span>
-                                Revenue per order
-                            </span>
-                        </div>
+.last-updated strong {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+}
 
-                    </article>
+.refresh-button {
+    display: flex;
+    align-items: center;
+    gap: 7px;
 
+    height: 36px;
 
-                    <article class="kpi-card">
+    padding: 0 13px;
 
-                        <div class="kpi-top">
-                            <span class="kpi-label">
-                                Revenue Growth
-                            </span>
+    border: 1px solid var(--border);
+    border-radius: 7px;
 
-                            <span class="kpi-icon">
-                                ↗
-                            </span>
-                        </div>
+    background: #ffffff;
+    color: var(--text-secondary);
 
-                        <div
-                            id="revenue-growth-value"
-                            class="kpi-value">
-                            —
-                        </div>
+    font-size: 12px;
+    font-weight: 600;
 
-                        <div class="kpi-footer">
-                            <span>
-                                Current period growth
-                            </span>
-                        </div>
+    transition:
+        border-color var(--transition),
+        color var(--transition),
+        background var(--transition);
+}
 
-                    </article>
+.refresh-button:hover {
+    border-color: #c7d0dc;
+    color: var(--accent);
+    background: var(--bg-tertiary);
+}
 
-                </div>
+.refresh-button.loading {
+    pointer-events: none;
+}
 
-            </section>
+.refresh-button.loading:first-letter {
+    animation: spin 0.8s linear infinite;
+}
 
 
-            <!-- =================================================
-                 SALES ANALYSIS
-            ================================================== -->
-            <section
-                id="sales"
-                class="dashboard-section">
+/* =========================================================
+   GENERAL SECTIONS
+========================================================= */
 
-                <div class="section-header">
+.dashboard-section {
+    padding: 34px 32px 0;
+    scroll-margin-top: 100px;
+}
 
-                    <div>
-                        <p class="section-eyebrow">
-                            SALES ANALYSIS
-                        </p>
+.section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
 
-                        <h2>Revenue & Profit Trends</h2>
+    margin-bottom: 20px;
+}
 
-                        <p>
-                            Track how sales and profitability change
-                            over time.
-                        </p>
-                    </div>
+.section-header h2 {
+    margin-top: 4px;
 
-                </div>
+    color: var(--text-primary);
 
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+}
 
-                <div class="chart-grid chart-grid-large">
+.section-header p:not(.section-eyebrow) {
+    max-width: 700px;
 
-                    <!-- Monthly Revenue -->
-                    <article class="chart-card chart-card-wide">
+    margin-top: 4px;
 
-                        <div class="chart-card-header">
+    color: var(--text-secondary);
 
-                            <div>
-                                <h3>Monthly Revenue</h3>
-                                <span>
-                                    Revenue performance over time
-                                </span>
-                            </div>
+    font-size: 12px;
+}
 
-                            <span class="chart-badge">
-                                Revenue
-                            </span>
 
-                        </div>
+/* =========================================================
+   FILTER PANEL
+========================================================= */
 
-                        <div class="chart-container">
-                            <canvas id="monthly-revenue-chart"></canvas>
+.filter-panel {
+    margin: 25px 32px 0;
 
-                            <div
-                                id="monthly-revenue-loading"
-                                class="chart-loading">
-                                Loading chart...
-                            </div>
+    padding: 20px;
 
-                            <div
-                                id="monthly-revenue-empty"
-                                class="chart-empty"
-                                hidden>
-                                No revenue data available.
-                            </div>
-                        </div>
+    background: var(--bg-secondary);
 
-                    </article>
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
 
+    box-shadow: var(--shadow-sm);
+}
 
-                    <!-- Monthly Profit -->
-                    <article class="chart-card">
+.filter-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-                        <div class="chart-card-header">
+    margin-bottom: 17px;
+}
 
-                            <div>
-                                <h3>Monthly Profit</h3>
-                                <span>
-                                    Profit performance
-                                </span>
-                            </div>
+.filter-heading h3 {
+    margin-top: 2px;
 
-                            <span class="chart-badge">
-                                Profit
-                            </span>
+    font-size: 14px;
+    font-weight: 700;
+}
 
-                        </div>
+.filter-grid {
+    display: grid;
 
-                        <div class="chart-container">
-                            <canvas id="monthly-profit-chart"></canvas>
+    grid-template-columns:
+        repeat(5, minmax(0, 1fr));
 
-                            <div
-                                id="monthly-profit-loading"
-                                class="chart-loading">
-                                Loading chart...
-                            </div>
+    gap: 12px;
+}
 
-                            <div
-                                id="monthly-profit-empty"
-                                class="chart-empty"
-                                hidden>
-                                No profit data available.
-                            </div>
-                        </div>
+.filter-group {
+    min-width: 0;
+}
 
-                    </article>
+.filter-group label {
+    display: block;
 
+    margin-bottom: 6px;
 
-                    <!-- Revenue vs Profit -->
-                    <article class="chart-card">
+    color: var(--text-secondary);
 
-                        <div class="chart-card-header">
+    font-size: 10px;
+    font-weight: 600;
+}
 
-                            <div>
-                                <h3>Revenue vs Profit</h3>
-                                <span>
-                                    Financial performance comparison
-                                </span>
-                            </div>
+.filter-group select {
+    width: 100%;
+    height: 38px;
 
-                        </div>
+    padding: 0 11px;
 
-                        <div class="chart-container">
-                            <canvas id="revenue-profit-chart"></canvas>
+    border: 1px solid var(--border);
+    border-radius: 7px;
 
-                            <div
-                                id="revenue-profit-loading"
-                                class="chart-loading">
-                                Loading chart...
-                            </div>
-                        </div>
+    background: #ffffff;
+    color: var(--text-primary);
 
-                    </article>
+    font-size: 12px;
 
+    outline: none;
 
-                    <!-- Yearly Comparison -->
-                    <article class="chart-card">
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition);
+}
 
-                        <div class="chart-card-header">
+.filter-group select:focus {
+    border-color: var(--accent);
 
-                            <div>
-                                <h3>Yearly Comparison</h3>
-                                <span>
-                                    Year-over-year performance
-                                </span>
-                            </div>
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.09);
+}
 
-                        </div>
+.reset-filter-button {
+    height: 32px;
 
-                        <div class="chart-container">
-                            <canvas id="yearly-comparison-chart"></canvas>
+    padding: 0 11px;
 
-                            <div
-                                id="yearly-comparison-loading"
-                                class="chart-loading">
-                                Loading chart...
-                            </div>
-                        </div>
+    border: 0;
+    border-radius: 6px;
 
-                    </article>
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
 
-                </div>
+    font-size: 11px;
+    font-weight: 600;
 
+    transition:
+        background var(--transition),
+        color var(--transition);
+}
 
-                <!-- Best / Worst Months -->
-                <div class="performance-summary">
+.reset-filter-button:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
 
-                    <article class="summary-card positive">
 
-                        <div class="summary-icon">
-                            ↑
-                        </div>
+/* =========================================================
+   KPI GRID
+========================================================= */
 
-                        <div>
-                            <span class="summary-label">
-                                Best Performing Month
-                            </span>
+.kpi-grid {
+    display: grid;
 
-                            <strong id="best-month">
-                                —
-                            </strong>
+    grid-template-columns:
+        repeat(6, minmax(0, 1fr));
 
-                            <small id="best-month-value">
-                                —
-                            </small>
-                        </div>
+    gap: 13px;
+}
 
-                    </article>
+.kpi-card {
+    min-width: 0;
 
+    padding: 17px;
 
-                    <article class="summary-card negative">
+    background: var(--bg-secondary);
 
-                        <div class="summary-icon">
-                            ↓
-                        </div>
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
 
-                        <div>
-                            <span class="summary-label">
-                                Weakest Performing Month
-                            </span>
+    box-shadow: var(--shadow-sm);
 
-                            <strong id="worst-month">
-                                —
-                            </strong>
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        border-color var(--transition);
+}
 
-                            <small id="worst-month-value">
-                                —
-                            </small>
-                        </div>
+.kpi-card:hover {
+    transform: translateY(-2px);
 
-                    </article>
+    border-color: #d7dce3;
 
-                </div>
+    box-shadow: var(--shadow-md);
+}
 
-            </section>
+.kpi-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
+.kpi-label {
+    color: var(--text-secondary);
 
-            <!-- =================================================
-                 PRODUCT ANALYSIS
-            ================================================== -->
-            <section
-                id="products"
-                class="dashboard-section">
+    font-size: 10px;
+    font-weight: 600;
+}
 
-                <div class="section-header">
+.kpi-icon {
+    min-width: 28px;
+    height: 28px;
 
-                    <div>
-                        <p class="section-eyebrow">
-                            PRODUCT ANALYSIS
-                        </p>
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-                        <h2>Product Performance</h2>
+    border-radius: 7px;
 
-                        <p>
-                            Identify the products driving revenue,
-                            profit and volume.
-                        </p>
-                    </div>
+    background: var(--accent-soft);
+    color: var(--accent);
 
-                </div>
+    font-size: 11px;
+    font-weight: 800;
+}
 
+.kpi-value {
+    margin-top: 11px;
 
-                <div class="chart-grid">
+    color: var(--text-primary);
 
-                    <article class="chart-card">
+    font-size: clamp(20px, 2vw, 27px);
+    font-weight: 750;
+    line-height: 1.15;
+    letter-spacing: -0.8px;
 
-                        <div class="chart-card-header">
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-                            <div>
-                                <h3>Top Products by Revenue</h3>
-                                <span>
-                                    Highest revenue-generating products
-                                </span>
-                            </div>
+.kpi-footer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
 
-                        </div>
+    margin-top: 9px;
 
-                        <div class="chart-container chart-container-tall">
-                            <canvas id="top-products-revenue-chart"></canvas>
+    color: var(--text-muted);
 
-                            <div
-                                id="top-products-revenue-loading"
-                                class="chart-loading">
-                                Loading chart...
-                            </div>
-                        </div>
+    font-size: 9px;
+}
 
-                    </article>
+.kpi-change {
+    font-weight: 700;
+    color: var(--success);
+}
 
+.kpi-change.negative {
+    color: var(--danger);
+}
 
-                    <article class="chart-card">
 
-                        <div class="chart-card-header">
+/* =========================================================
+   CHART GRID
+========================================================= */
 
-                            <div>
-                                <h3>Top Products by Profit</h3>
-                                <span>
-                                    Most profitable products
-                                </span>
-                            </div>
+.chart-grid {
+    display: grid;
 
-                        </div>
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
 
-                        <div class="chart-container chart-container-tall">
-                            <canvas id="top-products-profit-chart"></canvas>
+    gap: 15px;
+}
 
-                            <div
-                                id="top-products-profit-loading"
-                                class="chart-loading">
-                                Loading chart...
-                            </div>
-                        </div>
+.chart-grid-large {
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+}
 
-                    </article>
+.chart-card-wide {
+    grid-column: span 2;
+}
 
+.chart-card {
+    position: relative;
 
-                    <article class="chart-card">
+    min-width: 0;
+    min-height: 0;
 
-                        <div class="chart-card-header">
+    padding: 18px;
 
-                            <div>
-                                <h3>Top Products by Quantity</h3>
-                                <span>
-                                    Highest-volume products
-                                </span>
-                            </div>
+    background: var(--bg-secondary);
 
-                        </div>
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
 
-                        <div class="chart-container chart-container-tall">
-                            <canvas id="top-products-quantity-chart"></canvas>
+    box-shadow: var(--shadow-sm);
 
-                            <div
-                                id="top-products-quantity-loading"
-                                class="chart-loading">
-                                Loading chart...
-                            </div>
-                        </div>
+    overflow: hidden;
+}
 
-                    </article>
+.chart-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
 
-                </div>
+    min-height: 42px;
 
+    margin-bottom: 14px;
+}
 
-                <!-- Product Table -->
-                <article class="table-card">
+.chart-card-header h3 {
+    color: var(--text-primary);
 
-                    <div class="table-card-header">
+    font-size: 13px;
+    font-weight: 700;
+}
 
-                        <div>
-                            <p class="section-eyebrow">
-                                PRODUCT RANKING
-                            </p>
+.chart-card-header span {
+    display: block;
 
-                            <h3>Product Performance Table</h3>
-                        </div>
+    margin-top: 2px;
 
-                        <div class="table-search">
+    color: var(--text-muted);
 
-                            <label
-                                for="product-search"
-                                class="sr-only">
-                                Search products
-                            </label>
+    font-size: 10px;
+}
 
-                            <input
-                                type="search"
-                                id="product-search"
-                                placeholder="Search products...">
+.chart-badge {
+    padding: 4px 7px;
 
-                        </div>
+    border-radius: 5px;
 
-                    </div>
+    background: var(--accent-soft) !important;
+    color: var(--accent) !important;
 
+    font-size: 9px !important;
+    font-weight: 700;
+}
 
-                    <div class="table-wrapper">
+.chart-container {
+    position: relative;
 
-                        <table id="product-performance-table">
+    width: 100%;
+    height: 275px;
+}
 
-                            <thead>
+.chart-container-tall {
+    height: 330px;
+}
 
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Product</th>
-                                    <th>Category</th>
-                                    <th>Revenue</th>
-                                    <th>Profit</th>
-                                    <th>Quantity</th>
-                                    <th>Margin</th>
-                                </tr>
+.chart-loading,
+.chart-empty {
+    position: absolute;
+    inset: 0;
 
-                            </thead>
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-                            <tbody id="product-table-body">
+    background: rgba(255, 255, 255, 0.92);
 
-                                <tr>
-                                    <td
-                                        colspan="7"
-                                        class="table-loading">
-                                        Loading product data...
-                                    </td>
-                                </tr>
+    color: var(--text-muted);
 
-                            </tbody>
+    font-size: 11px;
 
-                        </table>
+    z-index: 2;
+}
 
-                    </div>
+.chart-empty {
+    color: var(--text-secondary);
+}
 
-                    <div
-                        id="product-table-empty"
-                        class="table-empty"
-                        hidden>
-                        No product data matches the selected filters.
-                    </div>
 
-                </article>
+/* =========================================================
+   PERFORMANCE SUMMARY
+========================================================= */
 
-            </section>
+.performance-summary {
+    display: grid;
 
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
 
-            <!-- =================================================
-                 CATEGORY ANALYSIS
-            ================================================== -->
-            <section
-                id="categories"
-                class="dashboard-section">
+    gap: 15px;
 
-                <div class="section-header">
+    margin-top: 15px;
+}
 
-                    <div>
-                        <p class="section-eyebrow">
-                            CATEGORY ANALYSIS
-                        </p>
+.summary-card {
+    display: flex;
+    align-items: center;
 
-                        <h2>Category Performance</h2>
+    min-width: 0;
 
-                        <p>
-                            Compare business contribution across
-                            product categories.
-                        </p>
-                    </div>
+    padding: 15px 18px;
 
-                </div>
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
 
+    background: var(--bg-secondary);
+}
 
-                <div class="chart-grid">
+.summary-card.positive {
+    border-left: 3px solid var(--success);
+}
 
-                    <article class="chart-card">
+.summary-card.negative {
+    border-left: 3px solid var(--danger);
+}
 
-                        <div class="chart-card-header">
+.summary-icon {
+    width: 38px;
+    height: 38px;
 
-                            <div>
-                                <h3>Revenue by Category</h3>
-                                <span>
-                                    Category revenue contribution
-                                </span>
-                            </div>
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-                        </div>
+    margin-right: 12px;
 
-                        <div class="chart-container">
-                            <canvas id="category-revenue-chart"></canvas>
-                        </div>
+    border-radius: 8px;
 
-                    </article>
+    background: var(--bg-tertiary);
 
+    font-size: 17px;
+    font-weight: 700;
+}
 
-                    <article class="chart-card">
+.summary-card.positive .summary-icon {
+    color: var(--success);
+}
 
-                        <div class="chart-card-header">
+.summary-card.negative .summary-icon {
+    color: var(--danger);
+}
 
-                            <div>
-                                <h3>Profit by Category</h3>
-                                <span>
-                                    Category profitability
-                                </span>
-                            </div>
+.summary-label {
+    display: block;
 
-                        </div>
+    color: var(--text-muted);
 
-                        <div class="chart-container">
-                            <canvas id="category-profit-chart"></canvas>
-                        </div>
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
 
-                    </article>
+.summary-card strong {
+    display: block;
 
+    margin-top: 2px;
 
-                    <article class="chart-card">
+    color: var(--text-primary);
 
-                        <div class="chart-card-header">
+    font-size: 14px;
+}
 
-                            <div>
-                                <h3>Quantity by Category</h3>
-                                <span>
-                                    Units sold by category
-                                </span>
-                            </div>
+.summary-card small {
+    display: block;
 
-                        </div>
+    margin-top: 1px;
 
-                        <div class="chart-container">
-                            <canvas id="category-quantity-chart"></canvas>
-                        </div>
+    color: var(--text-secondary);
 
-                    </article>
+    font-size: 10px;
+}
 
 
-                    <article class="chart-card">
+/* =========================================================
+   TABLE CARDS
+========================================================= */
 
-                        <div class="chart-card-header">
+.table-card {
+    margin-top: 15px;
 
-                            <div>
-                                <h3>Category Contribution</h3>
-                                <span>
-                                    Overall revenue contribution
-                                </span>
-                            </div>
+    background: var(--bg-secondary);
 
-                        </div>
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
 
-                        <div class="chart-container">
-                            <canvas id="category-contribution-chart"></canvas>
-                        </div>
+    box-shadow: var(--shadow-sm);
 
-                    </article>
+    overflow: hidden;
+}
 
-                </div>
+.table-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
+    padding: 18px;
 
-                <div
-                    id="category-summary"
-                    class="category-summary-grid">
-                </div>
+    border-bottom: 1px solid var(--border-light);
+}
 
-            </section>
+.table-card-header h3 {
+    margin-top: 3px;
 
+    font-size: 13px;
+    font-weight: 700;
+}
 
-            <!-- =================================================
-                 REGIONAL ANALYSIS
-            ================================================== -->
-            <section
-                id="regions"
-                class="dashboard-section">
+.table-search input {
+    width: 220px;
+    height: 34px;
 
-                <div class="section-header">
+    padding: 0 10px;
 
-                    <div>
-                        <p class="section-eyebrow">
-                            REGIONAL ANALYSIS
-                        </p>
+    border: 1px solid var(--border);
+    border-radius: 6px;
 
-                        <h2>Regional Performance</h2>
+    outline: none;
 
-                        <p>
-                            Understand how different regions contribute
-                            to overall business results.
-                        </p>
-                    </div>
+    color: var(--text-primary);
 
-                </div>
+    font-size: 11px;
+}
 
+.table-search input:focus {
+    border-color: var(--accent);
 
-                <div class="chart-grid">
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.08);
+}
 
-                    <article class="chart-card chart-card-wide">
+.table-wrapper {
+    width: 100%;
 
-                        <div class="chart-card-header">
+    overflow-x: auto;
+}
 
-                            <div>
-                                <h3>Revenue by Region</h3>
-                                <span>
-                                    Regional revenue comparison
-                                </span>
-                            </div>
+table {
+    width: 100%;
 
-                        </div>
+    border-collapse: collapse;
 
-                        <div class="chart-container">
-                            <canvas id="region-revenue-chart"></canvas>
-                        </div>
+    white-space: nowrap;
+}
 
-                    </article>
+thead {
+    background: var(--bg-tertiary);
+}
 
+th {
+    padding: 11px 15px;
 
-                    <article class="chart-card">
+    border-bottom: 1px solid var(--border);
 
-                        <div class="chart-card-header">
+    color: var(--text-muted);
 
-                            <div>
-                                <h3>Profit by Region</h3>
-                                <span>
-                                    Regional profitability
-                                </span>
-                            </div>
+    font-size: 9px;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
-                        </div>
+td {
+    padding: 12px 15px;
 
-                        <div class="chart-container">
-                            <canvas id="region-profit-chart"></canvas>
-                        </div>
+    border-bottom: 1px solid var(--border-light);
 
-                    </article>
+    color: var(--text-secondary);
 
+    font-size: 11px;
+}
 
-                    <article class="chart-card">
+tbody tr {
+    transition: background var(--transition);
+}
 
-                        <div class="chart-card-header">
+tbody tr:hover {
+    background: #fafbfd;
+}
 
-                            <div>
-                                <h3>Orders by Region</h3>
-                                <span>
-                                    Transaction distribution
-                                </span>
-                            </div>
+tbody tr:last-child td {
+    border-bottom: 0;
+}
 
-                        </div>
+.table-loading,
+.table-empty {
+    padding: 30px !important;
 
-                        <div class="chart-container">
-                            <canvas id="region-orders-chart"></canvas>
-                        </div>
+    color: var(--text-muted) !important;
 
-                    </article>
+    text-align: center !important;
+}
 
-                </div>
+.table-empty {
+    border-top: 1px solid var(--border-light);
+}
 
+.product-name-cell {
+    color: var(--text-primary);
+    font-weight: 600;
+}
 
-                <article class="table-card">
+.margin-positive {
+    color: var(--success);
+    font-weight: 700;
+}
 
-                    <div class="table-card-header">
+.margin-negative {
+    color: var(--danger);
+    font-weight: 700;
+}
 
-                        <div>
-                            <p class="section-eyebrow">
-                                REGIONAL COMPARISON
-                            </p>
 
-                            <h3>Regional Performance Table</h3>
-                        </div>
+/* =========================================================
+   CATEGORY SUMMARY
+========================================================= */
 
-                    </div>
+.category-summary-grid {
+    display: grid;
 
+    grid-template-columns:
+        repeat(auto-fit, minmax(180px, 1fr));
 
-                    <div class="table-wrapper">
+    gap: 12px;
 
-                        <table id="region-performance-table">
+    margin-top: 15px;
+}
 
-                            <thead>
+.category-summary-card {
+    padding: 15px;
 
-                                <tr>
-                                    <th>Region</th>
-                                    <th>Revenue</th>
-                                    <th>Profit</th>
-                                    <th>Orders</th>
-                                    <th>Quantity</th>
-                                    <th>Profit Margin</th>
-                                </tr>
+    background: var(--bg-secondary);
 
-                            </thead>
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
 
-                            <tbody id="region-table-body">
+.category-summary-card span {
+    display: block;
 
-                                <tr>
-                                    <td
-                                        colspan="6"
-                                        class="table-loading">
-                                        Loading regional data...
-                                    </td>
-                                </tr>
+    color: var(--text-muted);
 
-                            </tbody>
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
-                        </table>
+.category-summary-card strong {
+    display: block;
 
-                    </div>
+    margin-top: 5px;
 
-                </article>
+    color: var(--text-primary);
 
-            </section>
+    font-size: 15px;
+}
 
+.category-summary-card small {
+    display: block;
 
-            <!-- =================================================
-                 BUSINESS INSIGHTS
-            ================================================== -->
-            <section
-                id="insights"
-                class="dashboard-section">
+    margin-top: 3px;
 
-                <div class="section-header">
+    color: var(--text-secondary);
 
-                    <div>
-                        <p class="section-eyebrow">
-                            BUSINESS INTELLIGENCE
-                        </p>
+    font-size: 10px;
+}
 
-                        <h2>Automated Business Insights</h2>
 
-                        <p>
-                            Data-driven findings generated automatically
-                            from the selected dataset.
-                        </p>
-                    </div>
+/* =========================================================
+   INSIGHTS
+========================================================= */
 
-                </div>
+.insights-grid {
+    display: grid;
 
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
 
-                <div
-                    id="insights-grid"
-                    class="insights-grid">
+    gap: 14px;
+}
 
-                    <article class="insight-card loading-placeholder">
-                        <div class="insight-icon">✦</div>
+.insight-card {
+    display: flex;
+    align-items: flex-start;
 
-                        <div>
-                            <span>Business Insight</span>
-                            <h3>Analysing your data...</h3>
-                            <p>
-                                Insights will appear here once the
-                                dashboard data has loaded.
-                            </p>
-                        </div>
-                    </article>
+    min-width: 0;
 
-                </div>
+    padding: 18px;
 
-            </section>
+    background: var(--bg-secondary);
 
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
 
-            <!-- =================================================
-                 FORECASTING
-            ================================================== -->
-            <section
-                id="forecast"
-                class="dashboard-section">
+    box-shadow: var(--shadow-sm);
 
-                <div class="section-header">
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition);
+}
 
-                    <div>
-                        <p class="section-eyebrow">
-                            PREDICTIVE ANALYTICS
-                        </p>
+.insight-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
 
-                        <h2>Sales Forecast</h2>
+.insight-icon {
+    flex: 0 0 auto;
 
-                        <p>
-                            A lightweight Python forecasting model
-                            estimates upcoming sales performance.
-                        </p>
-                    </div>
+    width: 36px;
+    height: 36px;
 
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-                    <div class="forecast-controls">
+    margin-right: 13px;
 
-                        <label for="forecast-period">
-                            Forecast period
-                        </label>
+    border-radius: 8px;
 
-                        <select id="forecast-period">
-                            <option value="3">3 Months</option>
-                            <option value="6" selected>
-                                6 Months
-                            </option>
-                            <option value="12">
-                                12 Months
-                            </option>
-                        </select>
+    background: var(--accent-soft);
+    color: var(--accent);
 
-                        <button
-                            type="button"
-                            id="run-forecast"
-                            class="primary-button">
-                            Generate Forecast
-                        </button>
+    font-size: 15px;
+}
 
-                    </div>
+.insight-card > div:last-child {
+    min-width: 0;
+}
 
-                </div>
+.insight-card span {
+    color: var(--text-muted);
 
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
 
-                <article class="forecast-card">
+.insight-card h3 {
+    margin-top: 3px;
 
-                    <div class="forecast-header">
+    color: var(--text-primary);
 
-                        <div>
+    font-size: 13px;
+    font-weight: 700;
+}
 
-                            <span class="forecast-model">
-                                MODEL
-                            </span>
+.insight-card p {
+    margin-top: 4px;
 
-                            <h3 id="forecast-model-name">
-                                Loading forecasting model...
-                            </h3>
+    color: var(--text-secondary);
 
-                            <p id="forecast-description">
-                                Preparing historical sales data.
-                            </p>
+    font-size: 11px;
+    line-height: 1.55;
+}
 
-                        </div>
+.loading-placeholder {
+    animation: pulse 1.5s ease-in-out infinite;
+}
 
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
 
-                        <div class="forecast-confidence">
+    50% {
+        opacity: 0.55;
+    }
+}
 
-                            <span>
-                                Forecast uncertainty
-                            </span>
 
-                            <strong id="forecast-confidence-value">
-                                —
-                            </strong>
+/* =========================================================
+   FORECASTING
+========================================================= */
 
-                        </div>
+.forecast-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-                    </div>
+.forecast-controls label {
+    color: var(--text-secondary);
 
+    font-size: 10px;
+    font-weight: 600;
+}
 
-                    <div class="forecast-chart-container">
+.forecast-controls select {
+    height: 34px;
 
-                        <canvas id="forecast-chart"></canvas>
+    padding: 0 9px;
 
-                        <div
-                            id="forecast-loading"
-                            class="chart-loading">
-                            Generating forecast...
-                        </div>
+    border: 1px solid var(--border);
+    border-radius: 6px;
 
-                        <div
-                            id="forecast-empty"
-                            class="chart-empty"
-                            hidden>
-                            Forecast data is not available.
-                        </div>
+    background: #ffffff;
 
-                    </div>
+    color: var(--text-primary);
 
+    font-size: 11px;
 
-                    <div class="forecast-summary">
+    outline: none;
+}
 
-                        <div class="forecast-stat">
+.primary-button {
+    height: 34px;
 
-                            <span>
-                                Historical Period
-                            </span>
+    padding: 0 13px;
 
-                            <strong id="forecast-historical-period">
-                                —
-                            </strong>
+    border: 0;
+    border-radius: 6px;
 
-                        </div>
+    background: var(--accent);
+    color: #ffffff;
 
+    font-size: 11px;
+    font-weight: 600;
 
-                        <div class="forecast-stat">
+    transition:
+        background var(--transition),
+        transform var(--transition);
+}
 
-                            <span>
-                                Forecast Period
-                            </span>
+.primary-button:hover {
+    background: var(--accent-dark);
+}
 
-                            <strong id="forecast-period-display">
-                                —
-                            </strong>
+.primary-button:active {
+    transform: translateY(1px);
+}
 
-                        </div>
+.forecast-card {
+    padding: 20px;
 
+    background: var(--bg-secondary);
 
-                        <div class="forecast-stat">
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
 
-                            <span>
-                                Expected Revenue
-                            </span>
+    box-shadow: var(--shadow-sm);
+}
 
-                            <strong id="forecast-total">
-                                —
-                            </strong>
+.forecast-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
 
-                        </div>
+    margin-bottom: 18px;
+}
 
+.forecast-model {
+    display: inline-block;
 
-                        <div class="forecast-stat">
+    padding: 3px 6px;
 
-                            <span>
-                                Expected Growth
-                            </span>
+    border-radius: 4px;
 
-                            <strong id="forecast-growth">
-                                —
-                            </strong>
+    background: var(--accent-soft);
+    color: var(--accent);
 
-                        </div>
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+}
 
-                    </div>
+.forecast-header h3 {
+    margin-top: 6px;
 
-                </article>
+    color: var(--text-primary);
 
-            </section>
+    font-size: 15px;
+}
 
+.forecast-header p {
+    margin-top: 2px;
 
-            <!-- =================================================
-                 FOOTER
-            ================================================== -->
-            <footer class="dashboard-footer">
+    color: var(--text-secondary);
 
-                <div>
-                    <strong>
-                        Business Intelligence Command Centre
-                    </strong>
+    font-size: 10px;
+}
 
-                    <span>
-                        Interactive Business Analytics Platform
-                    </span>
-                </div>
+.forecast-confidence {
+    min-width: 130px;
 
-                <div>
-                    <span>
-                        Powered by Python · Flask · Pandas · SQLite
-                    </span>
-                </div>
+    padding: 10px 13px;
 
-            </footer>
+    border: 1px solid var(--border);
+    border-radius: 7px;
 
-        </main>
+    text-align: right;
+}
 
-    </div>
+.forecast-confidence span {
+    display: block;
 
+    color: var(--text-muted);
 
-    <!-- =========================================================
-         MOBILE SIDEBAR OVERLAY
-    ========================================================== -->
-    <div
-        id="sidebar-overlay"
-        class="sidebar-overlay"
-        hidden>
-    </div>
+    font-size: 9px;
+}
 
+.forecast-confidence strong {
+    display: block;
 
-    <!-- =========================================================
-         JAVASCRIPT
-         
-         The actual API logic will be placed in:
-         static/script.js
-    ========================================================== -->
-    <script src="static/script.js"></script>
+    margin-top: 2px;
 
-</body>
-</html>
+    color: var(--text-primary);
+
+    font-size: 13px;
+}
+
+.forecast-chart-container {
+    position: relative;
+
+    width: 100%;
+    height: 330px;
+
+    padding-top: 5px;
+}
+
+.forecast-summary {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 10px;
+
+    margin-top: 18px;
+}
+
+.forecast-stat {
+    padding: 13px;
+
+    background: var(--bg-tertiary);
+
+    border: 1px solid var(--border-light);
+    border-radius: 7px;
+}
+
+.forecast-stat span {
+    display: block;
+
+    color: var(--text-muted);
+
+    font-size: 9px;
+}
+
+.forecast-stat strong {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--text-primary);
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   ERROR STATE
+========================================================= */
+
+.error-state {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin: 20px 32px 0;
+    padding: 14px 16px;
+
+    background: var(--danger-soft);
+
+    border: 1px solid #fecdca;
+    border-radius: var(--radius-md);
+
+    color: var(--danger);
+}
+
+.error-icon {
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    border-radius: 50%;
+
+    background: #ffffff;
+
+    font-weight: 800;
+}
+
+.error-state strong {
+    display: block;
+
+    font-size: 12px;
+}
+
+.error-state p {
+    margin-top: 2px;
+
+    color: #912018;
+
+    font-size: 10px;
+}
+
+.error-state button {
+    margin-left: auto;
+
+    height: 31px;
+
+    padding: 0 11px;
+
+    border: 1px solid #fecdca;
+    border-radius: 6px;
+
+    background: #ffffff;
+    color: var(--danger);
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   SIDEBAR MOBILE OVERLAY
+========================================================= */
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+
+    z-index: 900;
+
+    background: rgba(15, 23, 42, 0.45);
+
+    backdrop-filter: blur(2px);
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.dashboard-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-top: 45px;
+    padding: 22px 32px;
+
+    border-top: 1px solid var(--border);
+
+    color: var(--text-muted);
+
+    font-size: 9px;
+}
+
+.dashboard-footer strong {
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 10px;
+}
+
+.dashboard-footer span {
+    display: block;
+
+    margin-top: 2px;
+}
+
+
+/* =========================================================
+   RESPONSIVE — LARGE TABLETS
+========================================================= */
+
+@media (max-width: 1250px) {
+
+    .kpi-grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+
+    .filter-grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — TABLETS
+========================================================= */
+
+@media (max-width: 950px) {
+
+    :root {
+        --sidebar-width: 230px;
+    }
+
+    .dashboard-header {
+        padding: 0 22px;
+    }
+
+    .dashboard-section {
+        padding-left: 22px;
+        padding-right: 22px;
+    }
+
+    .filter-panel {
+        margin-left: 22px;
+        margin-right: 22px;
+    }
+
+    .error-state {
+        margin-left: 22px;
+        margin-right: 22px;
+    }
+
+    .kpi-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .chart-grid,
+    .chart-grid-large {
+        grid-template-columns:
+            minmax(0, 1fr);
+    }
+
+    .chart-card-wide {
+        grid-column: auto;
+    }
+
+    .insights-grid {
+        grid-template-columns:
+            minmax(0, 1fr);
+    }
+
+    .forecast-summary {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    :root {
+        --header-height: 70px;
+    }
+
+    .sidebar {
+        transform: translateX(-100%);
+
+        transition: transform 220ms ease;
+    }
+
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .sidebar-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dashboard-header {
+        padding: 0 15px;
+    }
+
+    .header-right {
+        gap: 6px;
+    }
+
+    .last-updated {
+        display: none;
+    }
+
+    .refresh-button span {
+        display: none;
+    }
+
+    .refresh-button {
+        width: 36px;
+        padding: 0;
+
+        justify-content: center;
+    }
+
+    .dashboard-section {
+        padding: 26px 15px 0;
+    }
+
+    .filter-panel {
+        margin: 17px 15px 0;
+        padding: 15px;
+    }
+
+    .filter-heading {
+        align-items: flex-start;
+    }
+
+    .filter-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .kpi-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 9px;
+    }
+
+    .kpi-card {
+        padding: 13px;
+    }
+
+    .kpi-value {
+        font-size: 19px;
+    }
+
+    .section-header {
+        display: block;
+    }
+
+    .forecast-controls {
+        flex-wrap: wrap;
+
+        margin-top: 14px;
+    }
+
+    .performance-summary {
+        grid-template-columns:
+            minmax(0, 1fr);
+    }
+
+    .table-card-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .table-search {
+        width: 100%;
+    }
+
+    .table-search input {
+        width: 100%;
+    }
+
+    .forecast-header {
+        flex-direction: column;
+    }
+
+    .forecast-confidence {
+        width: 100%;
+        margin-top: 12px;
+
+        text-align: left;
+    }
+
+    .forecast-summary {
+        grid-template-columns:
+            minmax(0, 1fr);
+    }
+
+    .dashboard-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .error-state {
+        margin-left: 15px;
+        margin-right: 15px;
+
+        align-items: flex-start;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — SMALL MOBILE
+========================================================= */
+
+@media (max-width: 450px) {
+
+    .dashboard-header h2 {
+        font-size: 17px;
+    }
+
+    .filter-grid {
+        grid-template-columns:
+            minmax(0, 1fr);
+    }
+
+    .kpi-grid {
+        grid-template-columns:
+            minmax(0, 1fr);
+    }
+
+    .kpi-value {
+        font-size: 22px;
+    }
+
+    .chart-container {
+        height: 240px;
+    }
+
+    .chart-container-tall {
+        height: 285px;
+    }
+
+    .forecast-chart-container {
+        height: 270px;
+    }
+
+    .forecast-controls select,
+    .forecast-controls .primary-button {
+        flex: 1;
+    }
+
+    .error-state {
+        flex-wrap: wrap;
+    }
+
+    .error-state button {
+        margin-left: 42px;
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+}
